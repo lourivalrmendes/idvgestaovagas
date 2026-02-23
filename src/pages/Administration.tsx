@@ -42,6 +42,16 @@ export default function Administration() {
   const [funcaoDialog, setFuncaoDialog] = useState<FuncaoItem | 'new' | null>(null);
   const [funcaoForm, setFuncaoForm] = useState({ codigo: '', nome: '' });
 
+  // Categorias
+  const [catList, setCatList] = useState<DimensionItem[]>([]);
+  const [catDialog, setCatDialog] = useState<DimensionItem | 'new' | null>(null);
+  const [catForm, setCatForm] = useState({ nome: '' });
+
+  // Unidades
+  const [uniList, setUniList] = useState<DimensionItem[]>([]);
+  const [uniDialog, setUniDialog] = useState<DimensionItem | 'new' | null>(null);
+  const [uniForm, setUniForm] = useState({ nome: '' });
+
   const fetchAreas = async () => {
     const { data } = await supabase.from('areas').select('*').order('codigo');
     if (data) setAreas(data as unknown as AreaItem[]);
@@ -50,8 +60,16 @@ export default function Administration() {
     const { data } = await supabase.from('funcoes').select('*').order('codigo');
     if (data) setFuncoes(data as unknown as FuncaoItem[]);
   };
+  const fetchCategorias = async () => {
+    const { data } = await supabase.from('categorias').select('*').order('nome');
+    if (data) setCatList(data as unknown as DimensionItem[]);
+  };
+  const fetchUnidades = async () => {
+    const { data } = await supabase.from('unidades_negocio').select('*').order('nome');
+    if (data) setUniList(data as unknown as DimensionItem[]);
+  };
 
-  useEffect(() => { fetchAreas(); fetchFuncoes(); }, []);
+  useEffect(() => { fetchAreas(); fetchFuncoes(); fetchCategorias(); fetchUnidades(); }, []);
 
   // Area CRUD
   const openNewArea = () => { setAreaForm({ codigo: '', nome: '' }); setAreaDialog('new'); };
@@ -95,7 +113,49 @@ export default function Administration() {
     await fetchFuncoes();
   };
 
-  // --- existing handlers ---
+  // Categoria CRUD
+  const openNewCat = () => { setCatForm({ nome: '' }); setCatDialog('new'); };
+  const openEditCat = (c: DimensionItem) => { setCatForm({ nome: c.nome }); setCatDialog(c); };
+  const saveCat = async () => {
+    if (!catForm.nome.trim()) { toast.error('Nome é obrigatório'); return; }
+    if (catDialog === 'new') {
+      const { error } = await supabase.from('categorias').insert({ nome: catForm.nome.trim() } as any);
+      if (error) { toast.error('Erro: ' + error.message); return; }
+      toast.success('Categoria criada');
+    } else if (catDialog) {
+      const { error } = await supabase.from('categorias').update({ nome: catForm.nome.trim() } as any).eq('id', catDialog.id);
+      if (error) { toast.error('Erro: ' + error.message); return; }
+      toast.success('Categoria atualizada');
+    }
+    await fetchCategorias(); setCatDialog(null);
+  };
+  const toggleCat = async (c: DimensionItem) => {
+    await supabase.from('categorias').update({ ativo: !c.ativo } as any).eq('id', c.id);
+    await fetchCategorias();
+  };
+
+  // Unidade CRUD
+  const openNewUni = () => { setUniForm({ nome: '' }); setUniDialog('new'); };
+  const openEditUni = (u: DimensionItem) => { setUniForm({ nome: u.nome }); setUniDialog(u); };
+  const saveUni = async () => {
+    if (!uniForm.nome.trim()) { toast.error('Nome é obrigatório'); return; }
+    if (uniDialog === 'new') {
+      const { error } = await supabase.from('unidades_negocio').insert({ nome: uniForm.nome.trim() } as any);
+      if (error) { toast.error('Erro: ' + error.message); return; }
+      toast.success('Unidade criada');
+    } else if (uniDialog) {
+      const { error } = await supabase.from('unidades_negocio').update({ nome: uniForm.nome.trim() } as any).eq('id', uniDialog.id);
+      if (error) { toast.error('Erro: ' + error.message); return; }
+      toast.success('Unidade atualizada');
+    }
+    await fetchUnidades(); setUniDialog(null);
+  };
+  const toggleUni = async (u: DimensionItem) => {
+    await supabase.from('unidades_negocio').update({ ativo: !u.ativo } as any).eq('id', u.id);
+    await fetchUnidades();
+  };
+
+
   const saveSla = async () => {
     await store.setSlaAceite(sla);
     toast.success(`SLA atualizado para ${sla} dias úteis`);
@@ -264,23 +324,67 @@ export default function Administration() {
         </TabsContent>
 
         {/* Categorias */}
-        <TabsContent value="categorias" className="mt-4">
-          <Card className="max-w-md">
-            <CardHeader><CardTitle className="text-base">Categorias</CardTitle></CardHeader>
-            <CardContent>
-              <ul className="space-y-2">{store.categorias.map(c => <li key={c.id} className="flex items-center gap-2"><Badge variant="outline">{c.nome}</Badge></li>)}</ul>
-            </CardContent>
-          </Card>
+        <TabsContent value="categorias" className="mt-4 space-y-4">
+          <Button onClick={openNewCat}><Plus className="h-4 w-4 mr-2" />Nova Categoria</Button>
+          <div className="border rounded-xl overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead>Nome</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {catList.map(c => (
+                  <TableRow key={c.id}>
+                    <TableCell className="font-medium">{c.nome}</TableCell>
+                    <TableCell>
+                      <Badge variant={c.ativo ? 'default' : 'outline'} className="text-xs cursor-pointer" onClick={() => toggleCat(c)}>
+                        {c.ativo ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => openEditCat(c)}><Pencil className="h-4 w-4" /></Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {catList.length === 0 && (
+                  <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">Nenhuma categoria cadastrada</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </TabsContent>
 
         {/* Unidades */}
-        <TabsContent value="unidades" className="mt-4">
-          <Card className="max-w-md">
-            <CardHeader><CardTitle className="text-base">Unidades de Negócio</CardTitle></CardHeader>
-            <CardContent>
-              <ul className="space-y-2">{store.unidadesNegocio.map(u => <li key={u.id} className="flex items-center gap-2"><Badge variant="outline">{u.nome}</Badge></li>)}</ul>
-            </CardContent>
-          </Card>
+        <TabsContent value="unidades" className="mt-4 space-y-4">
+          <Button onClick={openNewUni}><Plus className="h-4 w-4 mr-2" />Nova Unidade</Button>
+          <div className="border rounded-xl overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead>Nome</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {uniList.map(u => (
+                  <TableRow key={u.id}>
+                    <TableCell className="font-medium">{u.nome}</TableCell>
+                    <TableCell>
+                      <Badge variant={u.ativo ? 'default' : 'outline'} className="text-xs cursor-pointer" onClick={() => toggleUni(u)}>
+                        {u.ativo ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => openEditUni(u)}><Pencil className="h-4 w-4" /></Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {uniList.length === 0 && (
+                  <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">Nenhuma unidade cadastrada</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </TabsContent>
       </Tabs>
 
@@ -342,6 +446,28 @@ export default function Administration() {
             <div><Label>Nome *</Label><Input placeholder="Ex: Desenvolvedor Java SR" value={funcaoForm.nome} onChange={e => setFuncaoForm(p => ({ ...p, nome: e.target.value }))} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setFuncaoDialog(null)}>Cancelar</Button><Button onClick={saveFuncao}>Salvar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Categoria Dialog */}
+      <Dialog open={!!catDialog} onOpenChange={() => setCatDialog(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{catDialog === 'new' ? 'Nova Categoria' : 'Editar Categoria'}</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div><Label>Nome *</Label><Input placeholder="Ex: Tecnologia" value={catForm.nome} onChange={e => setCatForm(p => ({ ...p, nome: e.target.value }))} /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setCatDialog(null)}>Cancelar</Button><Button onClick={saveCat}>Salvar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unidade Dialog */}
+      <Dialog open={!!uniDialog} onOpenChange={() => setUniDialog(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{uniDialog === 'new' ? 'Nova Unidade' : 'Editar Unidade'}</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div><Label>Nome *</Label><Input placeholder="Ex: São Paulo" value={uniForm.nome} onChange={e => setUniForm(p => ({ ...p, nome: e.target.value }))} /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setUniDialog(null)}>Cancelar</Button><Button onClick={saveUni}>Salvar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
