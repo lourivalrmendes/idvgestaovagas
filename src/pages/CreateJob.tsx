@@ -19,12 +19,18 @@ export default function CreateJob() {
   const [submitting, setSubmitting] = useState(false);
   const [areas, setAreas] = useState<{ id: string; codigo: string; nome: string }[]>([]);
   const [funcoes, setFuncoes] = useState<{ id: string; codigo: string; nome: string }[]>([]);
+  const [unidades, setUnidades] = useState<{ id: string; nome: string }[]>([]);
+  const [categorias, setCategorias] = useState<{ id: string; nome: string }[]>([]);
 
   useEffect(() => {
     supabase.from('areas').select('id, codigo, nome').eq('ativo', true).order('codigo')
       .then(({ data }) => { if (data) setAreas(data as any); });
     supabase.from('funcoes').select('id, codigo, nome').eq('ativo', true).order('codigo')
       .then(({ data }) => { if (data) setFuncoes(data as any); });
+    supabase.from('unidades_negocio').select('id, nome').eq('ativo', true).order('nome')
+      .then(({ data }) => { if (data) setUnidades(data as any); });
+    supabase.from('categorias').select('id, nome').eq('ativo', true).order('nome')
+      .then(({ data }) => { if (data) setCategorias(data as any); });
   }, []);
 
   const [form, setForm] = useState({
@@ -56,8 +62,8 @@ export default function CreateJob() {
 
     // Resolve dimension IDs
     const clienteId = store.clientes.find(c => c.nome === form.nome_cliente)?.id || null;
-    const unidadeId = store.unidadesNegocio.find(u => u.nome === form.unidade_negocio)?.id || null;
-    const categoriaId = store.categorias.find(c => c.nome === form.categoria)?.id || null;
+    const unidadeId = unidades.find(u => u.nome === form.unidade_negocio)?.id || null;
+    const categoriaId = categorias.find(c => c.nome === form.categoria)?.id || null;
 
     const tipo = form.tipo_clt ? 'CLT' : form.tipo_pj ? 'PJ' : 'ALOCACAO';
     const modalidade = form.mod_presencial ? 'PRESENCIAL' : form.mod_hibrido ? 'HIBRIDO' : 'REMOTO';
@@ -155,14 +161,14 @@ export default function CreateJob() {
               <Label>Unidade de Negócio</Label>
               <Select value={form.unidade_negocio} onValueChange={v => set('unidade_negocio', v)}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>{store.unidadesNegocio.map(u => <SelectItem key={u.id} value={u.nome}>{u.nome}</SelectItem>)}</SelectContent>
+                <SelectContent>{unidades.map(u => <SelectItem key={u.id} value={u.nome}>{u.nome}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
               <Label>Categoria</Label>
               <Select value={form.categoria} onValueChange={v => set('categoria', v)}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>{store.categorias.map(c => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}</SelectContent>
+                <SelectContent>{categorias.map(c => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </CardContent>
