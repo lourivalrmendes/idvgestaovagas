@@ -8,14 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { PIPELINE_ORDER, STATUS_LABELS, Vaga, VagaStatus } from '@/types';
+import { PIPELINE_ORDER, STATUS_LABELS, VagaStatus } from '@/types';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 export default function JobsKanban() {
-  const { vagas, changeVagaStatus, getEnviosByVaga, getUserById } = useAppStore();
+  const { vagas, changeVagaStatus, updateVaga, getEnviosByVaga, getUserById, loadingVagas } = useAppStore();
   const navigate = useNavigate();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
-  const [moveDialog, setMoveDialog] = useState<{ vaga: Vaga; newStatus: VagaStatus } | null>(null);
+  const [moveDialog, setMoveDialog] = useState<{ vaga: any; newStatus: VagaStatus } | null>(null);
   const [moveReason, setMoveReason] = useState('');
   const [moveDate, setMoveDate] = useState('');
 
@@ -35,18 +36,18 @@ export default function JobsKanban() {
     vagas: filtered.filter(v => v.status === status),
   }));
 
-  const handleMoveRequest = (vaga: Vaga, newStatus: VagaStatus) => {
+  const handleMoveRequest = (vaga: any, newStatus: VagaStatus) => {
     if (newStatus === 'VAGA_APROVADA' || newStatus === 'VAGA_REPROVADA') {
       setMoveDialog({ vaga, newStatus });
       setMoveReason('');
       setMoveDate('');
     } else {
-      changeVagaStatus(vaga.id, newStatus);
+      changeVagaStatus(vaga.dbId, newStatus);
       toast.success(`Vaga ${vaga.id} movida para ${STATUS_LABELS[newStatus]}`);
     }
   };
 
-  const confirmMove = () => {
+  const confirmMove = async () => {
     if (!moveDialog) return;
     const { vaga, newStatus } = moveDialog;
     if (newStatus === 'VAGA_REPROVADA' && !moveReason.trim()) {
@@ -57,10 +58,17 @@ export default function JobsKanban() {
       toast.error('Informe a data prevista de início');
       return;
     }
-    changeVagaStatus(vaga.id, newStatus, moveReason || undefined);
+    if (newStatus === 'VAGA_APROVADA' && moveDate) {
+      await updateVaga(vaga.dbId, { data_prevista_inicio: moveDate });
+    }
+    await changeVagaStatus(vaga.dbId, newStatus, moveReason || undefined);
     toast.success(`Vaga ${vaga.id} movida para ${STATUS_LABELS[newStatus]}`);
     setMoveDialog(null);
   };
+
+  if (loadingVagas) {
+    return <div className="page-container flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
 
   return (
     <div className="page-container animate-fade-in">
@@ -77,12 +85,12 @@ export default function JobsKanban() {
 
               <div className="space-y-3">
                 {col.vagas.map(vaga => {
-                  const envios = getEnviosByVaga(vaga.id);
+                  const envios = getEnviosByVaga(vaga.dbId);
                   const recrutador = vaga.recrutador_user_id ? getUserById(vaga.recrutador_user_id) : null;
                   return (
-                    <div key={vaga.id} className="kanban-card">
+                    <div key={vaga.dbId} className="kanban-card">
                       <div className="flex justify-between items-start mb-2">
-                        <button onClick={() => navigate(`/vagas/${vaga.id}`)} className="text-sm font-semibold text-foreground hover:text-primary text-left">
+                        <button onClick={() => navigate(`/vagas/${vaga.dbId}`)} className="text-sm font-semibold text-foreground hover:text-primary text-left">
                           {vaga.nome_cliente}
                         </button>
                         <span className="text-[10px] font-mono text-muted-foreground">{vaga.id}</span>
@@ -95,7 +103,7 @@ export default function JobsKanban() {
                       </div>
                       {recrutador && <p className="text-[11px] text-muted-foreground mb-2">🧑 {recrutador.nome}</p>}
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate(`/vagas/${vaga.id}`)}>Abrir</Button>
+                        <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate(`/vagas/${vaga.dbId}`)}>Abrir</Button>
                         <Select onValueChange={(val) => handleMoveRequest(vaga, val as VagaStatus)}>
                           <SelectTrigger className="h-7 text-xs w-auto min-w-[100px]">
                             <SelectValue placeholder="Mover para…" />

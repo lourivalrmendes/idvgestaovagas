@@ -8,14 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Eye, Pencil, Trash2, Search } from 'lucide-react';
+import { Plus, Eye, Pencil, Trash2, Search, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Vaga, VagaStatus } from '@/types';
-
-const openStatuses: VagaStatus[] = ['EM_VALIDACAO_RH', 'SEM_CVS_DENTRO_SLA', 'SEM_CVS_FORA_SLA', 'COM_CVS_ENVIADOS', 'COM_CVS_MAIS_15_DIAS_SEM_RETORNO', 'EM_FECHAMENTO'];
+import { VagaStatus } from '@/types';
 
 export default function JobsPanel() {
-  const { vagas, deleteVaga, getUserById, getEnviosByVaga } = useAppStore();
+  const { vagas, deleteVaga, getUserById, getEnviosByVaga, loadingVagas } = useAppStore();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<Filters>(defaultFilters);
@@ -34,15 +32,19 @@ export default function JobsPanel() {
     });
   }, [vagas, search, filters]);
 
-  const diasDesdeValidacao = (v: Vaga) => {
+  const diasDesdeValidacao = (v: any) => {
     if (!v.data_validacao_rh) return null;
     return Math.floor((Date.now() - new Date(v.data_validacao_rh).getTime()) / 86400000);
   };
 
-  const handleDelete = (id: string) => {
-    deleteVaga(id);
+  const handleDelete = async (v: any) => {
+    await deleteVaga(v.dbId);
     toast.success('Vaga deletada com sucesso');
   };
+
+  if (loadingVagas) {
+    return <div className="page-container flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
 
   if (filtered.length === 0 && vagas.length === 0) {
     return (
@@ -65,7 +67,7 @@ export default function JobsPanel() {
 
       <GlobalFilters filters={filters} onChange={setFilters} />
 
-      <Card className="border rounded-xl overflow-hidden">
+      <CardWrapper className="border rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
@@ -86,9 +88,9 @@ export default function JobsPanel() {
             {filtered.map(v => {
               const dias = diasDesdeValidacao(v);
               const recrutador = v.recrutador_user_id ? getUserById(v.recrutador_user_id) : null;
-              const envios = getEnviosByVaga(v.id);
+              const envios = getEnviosByVaga(v.dbId);
               return (
-                <TableRow key={v.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/vagas/${v.id}`)}>
+                <TableRow key={v.dbId} className="hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/vagas/${v.dbId}`)}>
                   <TableCell className="font-mono text-xs text-muted-foreground">{v.id}</TableCell>
                   <TableCell className="font-medium">{v.nome_cliente}</TableCell>
                   <TableCell>{v.funcao}</TableCell>
@@ -107,8 +109,8 @@ export default function JobsPanel() {
                   <TableCell className="text-center">{envios.length}</TableCell>
                   <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/vagas/${v.id}`)}><Eye className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/vagas/${v.id}`)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => navigate(`/vagas/${v.dbId}`)}><Eye className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => navigate(`/vagas/${v.dbId}`)}><Pencil className="h-4 w-4" /></Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -120,7 +122,7 @@ export default function JobsPanel() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(v.id)}>Deletar</AlertDialogAction>
+                            <AlertDialogAction onClick={() => handleDelete(v)}>Deletar</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
@@ -131,7 +133,7 @@ export default function JobsPanel() {
             })}
           </TableBody>
         </Table>
-      </Card>
+      </CardWrapper>
 
       {filtered.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
@@ -142,6 +144,6 @@ export default function JobsPanel() {
   );
 }
 
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+function CardWrapper({ children, className }: { children: React.ReactNode; className?: string }) {
   return <div className={className}>{children}</div>;
 }

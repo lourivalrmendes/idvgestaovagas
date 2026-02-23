@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAppStore } from '@/data/store';
+import { useAppStore, DimensionItem } from '@/data/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,40 +10,73 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { User, UserArea, UserPerfil } from '@/types';
 import { Plus, Pencil, Settings } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import type { AppRole } from '@/hooks/useAuth';
+
+type UserArea = 'Administrativo' | 'RH' | 'Comercial';
+
+const ROLE_LABELS: Record<AppRole, string> = {
+  ADMIN: 'Administrador',
+  COORDENADOR_RH: 'Coordenador RH',
+  RECRUTADOR: 'Recrutador',
+  COMERCIAL: 'Comercial',
+};
 
 export default function Administration() {
   const store = useAppStore();
   const [sla, setSla] = useState(store.slaAceite);
-  const [userDialog, setUserDialog] = useState<User | null | 'new'>(null);
-  const [userForm, setUserForm] = useState({ nome: '', area: 'RH' as UserArea, perfil: 'Recrutador' as UserPerfil, email: '', telefone: '' });
+  const [userDialog, setUserDialog] = useState<any | null>(null);
+  const [userForm, setUserForm] = useState({ nome: '', area: 'RH' as UserArea, role: 'RECRUTADOR' as AppRole, email: '', telefone: '', password: '' });
 
-  const saveSla = () => {
-    store.setSlaAceite(sla);
+  const saveSla = async () => {
+    await store.setSlaAceite(sla);
     toast.success(`SLA atualizado para ${sla} dias úteis`);
   };
 
   const openNewUser = () => {
-    setUserForm({ nome: '', area: 'RH', perfil: 'Recrutador', email: '', telefone: '' });
+    setUserForm({ nome: '', area: 'RH', role: 'RECRUTADOR', email: '', telefone: '', password: '' });
     setUserDialog('new');
   };
 
-  const openEditUser = (u: User) => {
-    setUserForm({ nome: u.nome, area: u.area, perfil: u.perfil, email: u.email, telefone: u.telefone });
+  const openEditUser = (u: any) => {
+    setUserForm({ nome: u.nome, area: u.area as UserArea, role: (u.role || 'RECRUTADOR') as AppRole, email: u.email, telefone: u.telefone, password: '' });
     setUserDialog(u);
   };
 
-  const saveUser = () => {
+  const saveUser = async () => {
     if (!userForm.nome.trim()) { toast.error('Nome é obrigatório'); return; }
     if (userDialog === 'new') {
-      const id = `USR-${String(store.users.length + 1).padStart(3, '0')}`;
-      store.setUsers(prev => [...prev, { id, ...userForm, ativo: true }]);
-      toast.success('Usuário criado');
+      if (!userForm.email.trim() || !userForm.password.trim()) { toast.error('E-mail e senha são obrigatórios'); return; }
+      // Create user via edge function or direct signup
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: userForm.email,
+        password: userForm.password,
+        options: { data: { nome: userForm.nome } },
+      });
+      if (signUpError) { toast.error('Erro ao criar usuário: ' + signUpError.message); return; }
+      if (signUpData.user) {
+        // Update profile
+        await supabase.from('profiles').update({
+          nome: userForm.nome, area: userForm.area, telefone: userForm.telefone,
+        }).eq('id', signUpData.user.id);
+        // Assign role
+        await supabase.from('user_roles').insert({
+          user_id: signUpData.user.id, role: userForm.role,
+        });
+      }
+      toast.success('Usuário criado. Um e-mail de confirmação foi enviado.');
     } else if (userDialog) {
-      store.setUsers(prev => prev.map(u => u.id === (userDialog as User).id ? { ...u, ...userForm } : u));
+      await supabase.from('profiles').update({
+        nome: userForm.nome, area: userForm.area, telefone: userForm.telefone,
+      }).eq('id', userDialog.id);
+      // Update role
+      await supabase.from('user_roles').upsert({
+        user_id: userDialog.id, role: userForm.role,
+      }, { onConflict: 'user_id,role' });
       toast.success('Usuário atualizado');
     }
+    await store.refreshUsers();
     setUserDialog(null);
   };
 
@@ -85,7 +118,7 @@ export default function Administration() {
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">{u.nome}</TableCell>
                     <TableCell>{u.area}</TableCell>
-                    <TableCell><Badge variant="secondary" className="text-xs">{u.perfil}</Badge></TableCell>
+                    <TableCell><Badge variant="secondary" className="text-xs">{u.role ? ROLE_LABELS[u.role] : 'Sem perfil'}</Badge></TableCell>
                     <TableCell className="text-sm">{u.email}</TableCell>
                     <TableCell className="text-sm">{u.telefone}</TableCell>
                     <TableCell><Badge variant={u.ativo ? 'default' : 'outline'} className="text-xs">{u.ativo ? 'Ativo' : 'Inativo'}</Badge></TableCell>
@@ -101,7 +134,7 @@ export default function Administration() {
           <Card className="max-w-md">
             <CardHeader><CardTitle className="text-base">Categorias</CardTitle></CardHeader>
             <CardContent>
-              <ul className="space-y-2">{store.categorias.map(c => <li key={c} className="flex items-center gap-2"><Badge variant="outline">{c}</Badge></li>)}</ul>
+              <ul className="space-y-2">{store.categorias.map(c => <li key={c.id} className="flex items-center gap-2"><Badge variant="outline">{c.nome}</Badge></li>)}</ul>
             </CardContent>
           </Card>
         </TabsContent>
@@ -110,7 +143,7 @@ export default function Administration() {
           <Card className="max-w-md">
             <CardHeader><CardTitle className="text-base">Unidades de Negócio</CardTitle></CardHeader>
             <CardContent>
-              <ul className="space-y-2">{store.unidadesNegocio.map(u => <li key={u} className="flex items-center gap-2"><Badge variant="outline">{u}</Badge></li>)}</ul>
+              <ul className="space-y-2">{store.unidadesNegocio.map(u => <li key={u.id} className="flex items-center gap-2"><Badge variant="outline">{u.nome}</Badge></li>)}</ul>
             </CardContent>
           </Card>
         </TabsContent>
@@ -122,6 +155,12 @@ export default function Administration() {
           <DialogHeader><DialogTitle>{userDialog === 'new' ? 'Novo Usuário' : 'Editar Usuário'}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div><Label>Nome *</Label><Input value={userForm.nome} onChange={e => setUserForm(p => ({ ...p, nome: e.target.value }))} /></div>
+            {userDialog === 'new' && (
+              <>
+                <div><Label>E-mail *</Label><Input type="email" value={userForm.email} onChange={e => setUserForm(p => ({ ...p, email: e.target.value }))} /></div>
+                <div><Label>Senha *</Label><Input type="password" value={userForm.password} onChange={e => setUserForm(p => ({ ...p, password: e.target.value }))} /></div>
+              </>
+            )}
             <div>
               <Label>Área</Label>
               <Select value={userForm.area} onValueChange={v => setUserForm(p => ({ ...p, area: v as UserArea }))}>
@@ -131,12 +170,16 @@ export default function Administration() {
             </div>
             <div>
               <Label>Perfil</Label>
-              <Select value={userForm.perfil} onValueChange={v => setUserForm(p => ({ ...p, perfil: v as UserPerfil }))}>
+              <Select value={userForm.role} onValueChange={v => setUserForm(p => ({ ...p, role: v as AppRole }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="Coordenador RH">Coordenador RH</SelectItem><SelectItem value="Recrutador">Recrutador</SelectItem><SelectItem value="Comercial">Comercial</SelectItem><SelectItem value="Administrador">Administrador</SelectItem></SelectContent>
+                <SelectContent>
+                  <SelectItem value="ADMIN">Administrador</SelectItem>
+                  <SelectItem value="COORDENADOR_RH">Coordenador RH</SelectItem>
+                  <SelectItem value="RECRUTADOR">Recrutador</SelectItem>
+                  <SelectItem value="COMERCIAL">Comercial</SelectItem>
+                </SelectContent>
               </Select>
             </div>
-            <div><Label>E-mail</Label><Input value={userForm.email} onChange={e => setUserForm(p => ({ ...p, email: e.target.value }))} /></div>
             <div><Label>Telefone</Label><Input value={userForm.telefone} onChange={e => setUserForm(p => ({ ...p, telefone: e.target.value }))} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setUserDialog(null)}>Cancelar</Button><Button onClick={saveUser}>Salvar</Button></DialogFooter>
