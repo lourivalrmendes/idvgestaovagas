@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '@/data/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,12 @@ export default function CreateJob() {
   const navigate = useNavigate();
   const store = useAppStore();
   const [submitting, setSubmitting] = useState(false);
+  const [areas, setAreas] = useState<{ id: string; codigo: string; nome: string }[]>([]);
+
+  useEffect(() => {
+    supabase.from('areas').select('id, codigo, nome').eq('ativo', true).order('codigo')
+      .then(({ data }) => { if (data) setAreas(data as any); });
+  }, []);
 
   const [form, setForm] = useState({
     nome_cliente: '', funcao: '', quantidade_de_vagas: 1, faixa_salarial: '',
@@ -106,7 +113,15 @@ export default function CreateJob() {
           <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div><Label>Data Solicitação</Label><Input type="date" value={form.data_solicitacao} onChange={e => set('data_solicitacao', e.target.value)} /></div>
             <div><Label>Solicitante</Label><Input value={form.nome_solicitante} onChange={e => set('nome_solicitante', e.target.value)} /></div>
-            <div><Label>Área</Label><Input value={form.area_solicitante} onChange={e => set('area_solicitante', e.target.value)} /></div>
+            <div>
+              <Label>Área</Label>
+              <Select value={form.area_solicitante} onValueChange={v => set('area_solicitante', v)}>
+                <SelectTrigger><SelectValue placeholder="Selecione a área" /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  {areas.map(a => <SelectItem key={a.id} value={a.nome}>{a.codigo} - {a.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </CardContent>
         </Card>
 
