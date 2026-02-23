@@ -18,10 +18,13 @@ export default function CreateJob() {
   const store = useAppStore();
   const [submitting, setSubmitting] = useState(false);
   const [areas, setAreas] = useState<{ id: string; codigo: string; nome: string }[]>([]);
+  const [funcoes, setFuncoes] = useState<{ id: string; codigo: string; nome: string }[]>([]);
 
   useEffect(() => {
     supabase.from('areas').select('id, codigo, nome').eq('ativo', true).order('codigo')
       .then(({ data }) => { if (data) setAreas(data as any); });
+    supabase.from('funcoes').select('id, codigo, nome').eq('ativo', true).order('codigo')
+      .then(({ data }) => { if (data) setFuncoes(data as any); });
   }, []);
 
   const [form, setForm] = useState({
@@ -136,7 +139,15 @@ export default function CreateJob() {
                 <SelectContent>{store.clientes.map(c => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div><Label>Função *</Label><Input value={form.funcao} onChange={e => set('funcao', e.target.value)} placeholder="Ex: Desenvolvedor Full Stack" /></div>
+            <div>
+              <Label>Função *</Label>
+              <Select value={form.funcao} onValueChange={v => set('funcao', v)}>
+                <SelectTrigger><SelectValue placeholder="Selecione a função" /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  {funcoes.map(f => <SelectItem key={f.id} value={f.nome}>{f.codigo} - {f.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <div><Label>Quantidade de Vagas *</Label><Input type="number" min={1} value={form.quantidade_de_vagas} onChange={e => set('quantidade_de_vagas', parseInt(e.target.value) || 1)} /></div>
             <div><Label>Faixa Salarial</Label><Input value={form.faixa_salarial} onChange={e => set('faixa_salarial', e.target.value)} placeholder="R$ 10.000 - R$ 15.000" /></div>
             <div><Label>Motivo Abertura</Label><Input value={form.motivo_abertura_vaga} onChange={e => set('motivo_abertura_vaga', e.target.value)} /></div>
