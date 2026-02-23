@@ -18,7 +18,7 @@ interface Props {
 
 export function GlobalFilters({ filters, onChange }: Props) {
   const { users, clientes, unidadesNegocio, categorias } = useAppStore();
-  const recrutadores = users.filter(u => u.perfil === 'Recrutador');
+  const recrutadores = users.filter(u => u.role === 'RECRUTADOR');
 
   const set = (key: keyof Filters, val: string) => onChange({ ...filters, [key]: val });
 
@@ -45,7 +45,7 @@ export function GlobalFilters({ filters, onChange }: Props) {
         <SelectTrigger className="w-[180px] bg-card"><SelectValue placeholder="Cliente" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="todos">Todos Clientes</SelectItem>
-          {clientes.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          {clientes.map(c => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}
         </SelectContent>
       </Select>
 
@@ -53,7 +53,7 @@ export function GlobalFilters({ filters, onChange }: Props) {
         <SelectTrigger className="w-[160px] bg-card"><SelectValue placeholder="Unidade" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="todos">Todas Unidades</SelectItem>
-          {unidadesNegocio.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+          {unidadesNegocio.map(u => <SelectItem key={u.id} value={u.nome}>{u.nome}</SelectItem>)}
         </SelectContent>
       </Select>
 
@@ -61,7 +61,7 @@ export function GlobalFilters({ filters, onChange }: Props) {
         <SelectTrigger className="w-[160px] bg-card"><SelectValue placeholder="Categoria" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="todos">Todas Categorias</SelectItem>
-          {categorias.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          {categorias.map(c => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}
         </SelectContent>
       </Select>
     </div>

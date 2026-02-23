@@ -9,16 +9,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Eye, Pencil, Trash2, FileText } from 'lucide-react';
+import { Plus, Search, Eye, Pencil, Trash2, FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Candidato } from '@/types';
+import { DbCandidato } from '@/data/store';
 
 export default function Candidates() {
   const store = useAppStore();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [createDialog, setCreateDialog] = useState(false);
-  const [editDialog, setEditDialog] = useState<Candidato | null>(null);
+  const [editDialog, setEditDialog] = useState<DbCandidato | null>(null);
   const [form, setForm] = useState({ nome: '', cidade: '', estado: '', telefone_celular: '', telefone_outro: '', email: '', linkedin: '', cv_nome: '', cv_tipo: 'PDF' as 'PDF' | 'DOCX' });
 
   const filtered = store.candidatos.filter(c => {
@@ -29,38 +29,39 @@ export default function Candidates() {
 
   const resetForm = () => setForm({ nome: '', cidade: '', estado: '', telefone_celular: '', telefone_outro: '', email: '', linkedin: '', cv_nome: '', cv_tipo: 'PDF' });
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!form.nome.trim()) { toast.error('Nome é obrigatório'); return; }
-    store.addCandidato({
-      id: store.nextCandidatoId(), nome: form.nome, cidade: form.cidade, estado: form.estado,
+    await store.addCandidato({
+      nome: form.nome, cidade: form.cidade, estado: form.estado,
       telefone_celular: form.telefone_celular, telefone_outro: form.telefone_outro,
       email: form.email, linkedin: form.linkedin,
-      ultimo_cv: form.cv_nome ? { nome: form.cv_nome, tipo: form.cv_tipo } : null,
+      ultimo_cv_nome: form.cv_nome || null, ultimo_cv_tipo: form.cv_nome ? form.cv_tipo : null,
+      created_by_user_id: store.currentUser!.id,
     });
     toast.success('Candidato criado com sucesso');
     setCreateDialog(false);
     resetForm();
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!editDialog) return;
-    store.updateCandidato(editDialog.id, {
+    await store.updateCandidato(editDialog.id, {
       nome: form.nome, cidade: form.cidade, estado: form.estado,
       telefone_celular: form.telefone_celular, telefone_outro: form.telefone_outro,
       email: form.email, linkedin: form.linkedin,
-      ultimo_cv: form.cv_nome ? { nome: form.cv_nome, tipo: form.cv_tipo } : null,
+      ultimo_cv_nome: form.cv_nome || null, ultimo_cv_tipo: form.cv_nome ? form.cv_tipo : null,
     });
     toast.success('Candidato atualizado');
     setEditDialog(null);
     resetForm();
   };
 
-  const openEdit = (c: Candidato) => {
+  const openEdit = (c: DbCandidato) => {
     setForm({
       nome: c.nome, cidade: c.cidade, estado: c.estado,
       telefone_celular: c.telefone_celular, telefone_outro: c.telefone_outro,
       email: c.email, linkedin: c.linkedin,
-      cv_nome: c.ultimo_cv?.nome || '', cv_tipo: c.ultimo_cv?.tipo || 'PDF',
+      cv_nome: c.ultimo_cv_nome || '', cv_tipo: (c.ultimo_cv_tipo as 'PDF' | 'DOCX') || 'PDF',
     });
     setEditDialog(c);
   };
@@ -89,6 +90,10 @@ export default function Candidates() {
       </div>
     </div>
   );
+
+  if (store.loadingCandidatos) {
+    return <div className="page-container flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
 
   return (
     <div className="page-container animate-fade-in">
@@ -121,7 +126,7 @@ export default function Candidates() {
                 <TableCell className="text-sm">{c.telefone_celular}</TableCell>
                 <TableCell className="text-sm">{c.email}</TableCell>
                 <TableCell className="text-sm text-primary truncate max-w-[150px]">{c.linkedin || '—'}</TableCell>
-                <TableCell>{c.ultimo_cv ? <Badge variant="secondary" className="text-xs"><FileText className="h-3 w-3 mr-1" />{c.ultimo_cv.tipo}</Badge> : '—'}</TableCell>
+                <TableCell>{c.ultimo_cv_nome ? <Badge variant="secondary" className="text-xs"><FileText className="h-3 w-3 mr-1" />{c.ultimo_cv_tipo}</Badge> : '—'}</TableCell>
                 <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => navigate(`/candidatos/${c.id}`)}><Eye className="h-4 w-4" /></Button>
@@ -130,7 +135,7 @@ export default function Candidates() {
                       <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader><AlertDialogTitle>Deletar {c.nome}?</AlertDialogTitle><AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader>
-                        <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => { store.deleteCandidato(c.id); toast.success('Candidato deletado'); }}>Deletar</AlertDialogAction></AlertDialogFooter>
+                        <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={async () => { await store.deleteCandidato(c.id); toast.success('Candidato deletado'); }}>Deletar</AlertDialogAction></AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
                   </div>
@@ -149,7 +154,6 @@ export default function Candidates() {
         </div>
       )}
 
-      {/* Create Dialog */}
       <Dialog open={createDialog} onOpenChange={setCreateDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Novo Candidato</DialogTitle></DialogHeader>
@@ -158,7 +162,6 @@ export default function Candidates() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
       <Dialog open={!!editDialog} onOpenChange={() => setEditDialog(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Editar Candidato</DialogTitle></DialogHeader>

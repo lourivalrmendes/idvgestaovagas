@@ -21,7 +21,7 @@ export function AppSidebar() {
   const { currentUser } = useAppStore();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
-  const canAdmin = currentUser.perfil === 'Administrador' || currentUser.perfil === 'Coordenador RH';
+  const canAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'COORDENADOR_RH';
 
   const linkClass = (path: string) => cn(
     'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
@@ -48,6 +48,12 @@ export function AppSidebar() {
     }
     return <div key={item.to}>{link}</div>;
   };
+
+  const roleLabel = currentUser?.role === 'ADMIN' ? 'Administrador' 
+    : currentUser?.role === 'COORDENADOR_RH' ? 'Coordenador RH'
+    : currentUser?.role === 'RECRUTADOR' ? 'Recrutador'
+    : currentUser?.role === 'COMERCIAL' ? 'Comercial'
+    : 'Sem perfil';
 
   return (
     <aside className={cn(
@@ -83,8 +89,8 @@ export function AppSidebar() {
               <UserCircle className="h-5 w-5 flex-shrink-0" />
               {!collapsed && (
                 <div className="min-w-0">
-                  <p className="text-sm font-medium truncate text-sidebar-fg">{currentUser.nome}</p>
-                  <p className="text-[11px] text-sidebar-fg/50 truncate">{currentUser.perfil}</p>
+                  <p className="text-sm font-medium truncate text-sidebar-fg">{currentUser?.nome || '...'}</p>
+                  <p className="text-[11px] text-sidebar-fg/50 truncate">{roleLabel}</p>
                 </div>
               )}
             </NavLink>
@@ -93,7 +99,7 @@ export function AppSidebar() {
             return (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>{link}</TooltipTrigger>
-                <TooltipContent side="right">{currentUser.nome}</TooltipContent>
+                <TooltipContent side="right">{currentUser?.nome}</TooltipContent>
               </Tooltip>
             );
           }

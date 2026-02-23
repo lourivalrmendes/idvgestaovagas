@@ -4,11 +4,11 @@ import { useAppStore } from '@/data/store';
 import { GlobalFilters, Filters, defaultFilters } from '@/components/GlobalFilters';
 import { VagaStatusBadge } from '@/components/StatusBadge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Vaga, VagaStatus } from '@/types';
-import { TrendingUp, TrendingDown, Briefcase, Clock, AlertTriangle, CheckCircle, XCircle, FileText } from 'lucide-react';
+import { VagaStatus } from '@/types';
+import { TrendingUp, TrendingDown, Briefcase, Clock, AlertTriangle, CheckCircle, XCircle, FileText, Loader2 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-function filterVagas(vagas: Vaga[], filters: Filters) {
+function filterVagas(vagas: any[], filters: Filters) {
   return vagas.filter(v => {
     if (filters.recrutador !== 'todos' && v.recrutador_user_id !== filters.recrutador) return false;
     if (filters.cliente !== 'todos' && v.nome_cliente !== filters.cliente) return false;
@@ -27,7 +27,7 @@ function filterVagas(vagas: Vaga[], filters: Filters) {
 const openStatuses: VagaStatus[] = ['EM_VALIDACAO_RH', 'SEM_CVS_DENTRO_SLA', 'SEM_CVS_FORA_SLA', 'COM_CVS_ENVIADOS', 'COM_CVS_MAIS_15_DIAS_SEM_RETORNO', 'EM_FECHAMENTO'];
 
 export default function Dashboard() {
-  const { vagas, unidadesNegocio, categorias, getUserById } = useAppStore();
+  const { vagas, unidadesNegocio, categorias, getUserById, loadingVagas } = useAppStore();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const navigate = useNavigate();
 
@@ -35,7 +35,6 @@ export default function Dashboard() {
 
   const kpis = useMemo(() => {
     const total = filtered.length;
-    const abertas = filtered.filter(v => openStatuses.includes(v.status));
     const ate5 = filtered.filter(v => {
       if (!v.data_validacao_rh || !openStatuses.includes(v.status)) return false;
       const diff = (Date.now() - new Date(v.data_validacao_rh).getTime()) / 86400000;
@@ -55,35 +54,38 @@ export default function Dashboard() {
     const ganhas = filtered.filter(v => v.status === 'VAGA_APROVADA');
     const perdidas = filtered.filter(v => v.status === 'VAGA_REPROVADA');
     return [
-      { label: 'Total Vagas', value: total, icon: Briefcase, color: 'text-primary', delta: '+12%' },
-      { label: 'Abertas ≤ 5 dias', value: ate5.length, icon: Clock, color: 'text-status-dentro-sla', delta: '+3' },
-      { label: 'Abertas + 5 dias', value: mais5.length, icon: AlertTriangle, color: 'text-status-sem-retorno', delta: '-1' },
-      { label: 'Abertas + 15 dias', value: mais15.length, icon: AlertTriangle, color: 'text-status-fora-sla', delta: '+2' },
-      { label: 'Encerradas', value: encerradas.length, icon: FileText, color: 'text-muted-foreground', delta: '+4' },
-      { label: 'Vagas Ganhas', value: ganhas.length, icon: CheckCircle, color: 'text-status-aprovada', delta: '+3' },
-      { label: 'Vagas Perdidas', value: perdidas.length, icon: XCircle, color: 'text-status-reprovada', delta: '0' },
+      { label: 'Total Vagas', value: total, icon: Briefcase, color: 'text-primary', delta: '' },
+      { label: 'Abertas ≤ 5 dias', value: ate5.length, icon: Clock, color: 'text-status-dentro-sla', delta: '' },
+      { label: 'Abertas + 5 dias', value: mais5.length, icon: AlertTriangle, color: 'text-status-sem-retorno', delta: '' },
+      { label: 'Abertas + 15 dias', value: mais15.length, icon: AlertTriangle, color: 'text-status-fora-sla', delta: '' },
+      { label: 'Encerradas', value: encerradas.length, icon: FileText, color: 'text-muted-foreground', delta: '' },
+      { label: 'Vagas Ganhas', value: ganhas.length, icon: CheckCircle, color: 'text-status-aprovada', delta: '' },
+      { label: 'Vagas Perdidas', value: perdidas.length, icon: XCircle, color: 'text-status-reprovada', delta: '' },
     ];
   }, [filtered]);
 
+  const unidadeNomes = useMemo(() => unidadesNegocio.map(u => u.nome), [unidadesNegocio]);
+  const categoriaNomes = useMemo(() => categorias.map(c => c.nome), [categorias]);
+
   const lineData = useMemo(() => {
-    return unidadesNegocio.map(u => ({
+    return unidadeNomes.map(u => ({
       name: u,
       total: filtered.filter(v => v.unidade_negocio === u).length,
       abertas: filtered.filter(v => v.unidade_negocio === u && openStatuses.includes(v.status)).length,
     }));
-  }, [filtered, unidadesNegocio]);
+  }, [filtered, unidadeNomes]);
 
   const barData = useMemo(() => {
-    return categorias.map(c => ({
+    return categoriaNomes.map(c => ({
       name: c,
       abertas: filtered.filter(v => v.categoria === c && openStatuses.includes(v.status)).length,
       ganhas: filtered.filter(v => v.categoria === c && v.status === 'VAGA_APROVADA').length,
       perdidas: filtered.filter(v => v.categoria === c && v.status === 'VAGA_REPROVADA').length,
     }));
-  }, [filtered, categorias]);
+  }, [filtered, categoriaNomes]);
 
   const insights = useMemo(() => {
-    const byUnidade = unidadesNegocio.map(u => ({
+    const byUnidade = unidadeNomes.map(u => ({
       name: u,
       perdas: filtered.filter(v => v.unidade_negocio === u && v.status === 'VAGA_REPROVADA').length,
       total: filtered.filter(v => v.unidade_negocio === u).length,
@@ -102,7 +104,11 @@ export default function Dashboard() {
       { title: 'Maior taxa de perdas', text: byUnidade[0] ? `${byUnidade[0].name} tem ${byUnidade[0].perdas} vaga(s) perdida(s)` : 'Sem dados', cta: 'Ver Vagas' },
       { title: 'Top clientes com vagas abertas', text: topClientes.map(c => `${c.name} (${c.count})`).join(', ') || 'Sem dados', cta: 'Ver Vagas' },
     ];
-  }, [filtered, unidadesNegocio]);
+  }, [filtered, unidadeNomes]);
+
+  if (loadingVagas) {
+    return <div className="page-container flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
 
   return (
     <div className="page-container animate-fade-in">
@@ -115,10 +121,6 @@ export default function Dashboard() {
             <CardContent className="p-0">
               <div className="flex items-center justify-between mb-2">
                 <kpi.icon className={`h-5 w-5 ${kpi.color}`} />
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  {kpi.delta.startsWith('+') ? <TrendingUp className="h-3 w-3 text-status-aprovada" /> : kpi.delta.startsWith('-') ? <TrendingDown className="h-3 w-3 text-status-reprovada" /> : null}
-                  {kpi.delta}
-                </span>
               </div>
               <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
               <p className="text-xs text-muted-foreground mt-1">{kpi.label}</p>

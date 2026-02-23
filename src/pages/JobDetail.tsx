@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { useAppStore } from '@/data/store';
+import { useState, useEffect } from 'react';
+import { useAppStore, DbHistorico } from '@/data/store';
 import { VagaStatusBadge, CandidatoStatusBadge } from '@/components/StatusBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,13 +13,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { STATUS_LABELS, PIPELINE_ORDER, VagaStatus, CandidatoStatusVaga } from '@/types';
 import { toast } from 'sonner';
-import { ArrowLeft, Clock, User, Building2, Mail } from 'lucide-react';
+import { ArrowLeft, Clock, User, Building2, Loader2 } from 'lucide-react';
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const store = useAppStore();
-  const vaga = store.vagas.find(v => v.id === id);
+  const vaga = store.vagas.find(v => v.dbId === id);
   const [statusDialog, setStatusDialog] = useState(false);
   const [newStatus, setNewStatus] = useState<VagaStatus | ''>('');
   const [statusObs, setStatusObs] = useState('');
@@ -31,52 +31,62 @@ export default function JobDetail() {
   const [reprovarMotivo, setReprovarMotivo] = useState('');
   const [validarDialog, setValidarDialog] = useState(false);
   const [validarRecrutador, setValidarRecrutador] = useState('');
+  const [historico, setHistorico] = useState<DbHistorico[]>([]);
+  const [loadingHistorico, setLoadingHistorico] = useState(false);
+
+  useEffect(() => {
+    if (vaga) {
+      setLoadingHistorico(true);
+      store.getHistoricoByVaga(vaga.dbId).then(h => { setHistorico(h); setLoadingHistorico(false); });
+    }
+  }, [vaga?.dbId, store.vagas]);
 
   if (!vaga) return <div className="page-container"><p>Vaga não encontrada.</p><Button variant="outline" onClick={() => navigate('/vagas')}>Voltar</Button></div>;
 
   const proprietario = store.getUserById(vaga.proprietario_user_id);
   const recrutador = vaga.recrutador_user_id ? store.getUserById(vaga.recrutador_user_id) : null;
-  const envios = store.getEnviosByVaga(vaga.id);
+  const envios = store.getEnviosByVaga(vaga.dbId);
   const diasSLA = vaga.data_validacao_rh ? Math.floor((Date.now() - new Date(vaga.data_validacao_rh).getTime()) / 86400000) : null;
-  const recrutadores = store.users.filter(u => u.perfil === 'Recrutador');
-  const canValidate = store.currentUser.perfil === 'Coordenador RH' || store.currentUser.perfil === 'Administrador';
+  const recrutadores = store.users.filter(u => u.role === 'RECRUTADOR');
+  const canValidate = store.currentUser?.role === 'COORDENADOR_RH' || store.currentUser?.role === 'ADMIN';
 
-  const handleStatusChange = () => {
+  const handleStatusChange = async () => {
     if (!newStatus) return;
     if (newStatus === 'VAGA_REPROVADA' && !statusObs.trim()) { toast.error('Informe o motivo'); return; }
     if (newStatus === 'VAGA_APROVADA' && !statusDate) { toast.error('Informe data de início'); return; }
-    store.changeVagaStatus(vaga.id, newStatus as VagaStatus, statusObs || undefined);
-    if (newStatus === 'VAGA_APROVADA' && statusDate) store.updateVaga(vaga.id, { data_prevista_inicio: statusDate });
+    if (newStatus === 'VAGA_APROVADA' && statusDate) await store.updateVaga(vaga.dbId, { data_prevista_inicio: statusDate });
+    await store.changeVagaStatus(vaga.dbId, newStatus as VagaStatus, statusObs || undefined);
     toast.success(`Status atualizado para ${STATUS_LABELS[newStatus as VagaStatus]}`);
     setStatusDialog(false);
     setNewStatus('');
     setStatusObs('');
   };
 
-  const handleValidar = () => {
+  const handleValidar = async () => {
     if (!validarRecrutador) { toast.error('Selecione um recrutador'); return; }
-    store.updateVaga(vaga.id, { recrutador_user_id: validarRecrutador, data_validacao_rh: new Date().toISOString().split('T')[0] });
-    store.changeVagaStatus(vaga.id, 'SEM_CVS_DENTRO_SLA', 'Vaga validada pelo RH');
+    await store.updateVaga(vaga.dbId, { recrutador_user_id: validarRecrutador, data_validacao_rh: new Date().toISOString().split('T')[0] });
+    await store.changeVagaStatus(vaga.dbId, 'SEM_CVS_DENTRO_SLA', 'Vaga validada pelo RH');
     toast.success('Vaga validada e recrutador atribuído');
     setValidarDialog(false);
   };
 
-  const handleReprovar = () => {
+  const handleReprovar = async () => {
     if (!reprovarMotivo.trim()) { toast.error('Informe o motivo'); return; }
-    store.updateVaga(vaga.id, { reprovada_rh_motivo: reprovarMotivo });
+    await store.updateVaga(vaga.dbId, { motivo_reprovacao_rh: reprovarMotivo });
     toast.success('Vaga recusada pelo RH');
     toast.info('📧 E-mail de notificação enviado ao proprietário (simulado)', { duration: 5000 });
     setReprovarDialog(false);
   };
 
-  const handleAssociar = () => {
+  const handleAssociar = async () => {
     if (!assocCandidato) { toast.error('Selecione um candidato'); return; }
-    store.addEnvio({
-      id: store.nextEnvioId(), vaga_id: vaga.id, candidato_id: assocCandidato,
-      data_envio: new Date().toISOString().split('T')[0], status: 'EM_ENTREVISTA', observacoes: assocObs,
+    await store.addEnvio({
+      vaga_id: vaga.dbId, candidato_id: assocCandidato,
+      data_envio: new Date().toISOString().split('T')[0], status_candidato_na_vaga: 'EM_ENTREVISTA',
+      observacoes: assocObs, created_by_user_id: store.currentUser!.id,
     });
     if (vaga.status === 'SEM_CVS_DENTRO_SLA' || vaga.status === 'SEM_CVS_FORA_SLA') {
-      store.changeVagaStatus(vaga.id, 'COM_CVS_ENVIADOS', 'Candidato associado à vaga');
+      await store.changeVagaStatus(vaga.dbId, 'COM_CVS_ENVIADOS', 'Candidato associado à vaga');
     }
     toast.success('Candidato associado com sucesso');
     setAssocDialog(false);
@@ -215,12 +225,12 @@ export default function JobDetail() {
                     <TableRow key={e.id}>
                       <TableCell className="font-medium">{cand?.nome || e.candidato_id}</TableCell>
                       <TableCell>{e.data_envio}</TableCell>
-                      <TableCell><CandidatoStatusBadge status={e.status} /></TableCell>
+                      <TableCell><CandidatoStatusBadge status={e.status_candidato_na_vaga as CandidatoStatusVaga} /></TableCell>
                       <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">{e.observacoes || '—'}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           {cand && <Button variant="ghost" size="sm" onClick={() => navigate(`/candidatos/${cand.id}`)}>Ver</Button>}
-                          <Select onValueChange={val => { store.updateEnvioStatus(e.id, val as CandidatoStatusVaga); toast.success('Status atualizado'); }}>
+                          <Select onValueChange={val => { store.updateEnvioStatus(e.id, val); toast.success('Status atualizado'); }}>
                             <SelectTrigger className="h-8 w-auto text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="EM_ENTREVISTA">Em Entrevista</SelectItem>
@@ -243,23 +253,28 @@ export default function JobDetail() {
         <TabsContent value="historico" className="mt-4">
           <Card>
             <CardContent className="pt-6">
-              <div className="space-y-4">
-                {[...vaga.historico_status].reverse().map((h, i) => {
-                  const user = store.getUserById(h.alterado_por);
-                  return (
-                    <div key={i} className="flex gap-4 items-start">
-                      <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
-                      <div>
-                        <p className="text-sm font-medium">
-                          {h.status_anterior ? `${STATUS_LABELS[h.status_anterior]} → ` : ''}{STATUS_LABELS[h.status]}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{user?.nome || h.alterado_por} · {h.data}</p>
-                        {h.observacao && <p className="text-xs text-muted-foreground mt-1 italic">{h.observacao}</p>}
+              {loadingHistorico ? (
+                <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+              ) : (
+                <div className="space-y-4">
+                  {historico.map((h, i) => {
+                    const user = h.alterado_por ? store.getUserById(h.alterado_por) : null;
+                    return (
+                      <div key={h.id} className="flex gap-4 items-start">
+                        <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium">
+                            {h.status_anterior ? `${STATUS_LABELS[h.status_anterior as VagaStatus] || h.status_anterior} → ` : ''}{STATUS_LABELS[h.status_novo as VagaStatus] || h.status_novo}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{user?.nome || 'Sistema'} · {new Date(h.criado_em).toLocaleDateString('pt-BR')}</p>
+                          {h.observacao && <p className="text-xs text-muted-foreground mt-1 italic">{h.observacao}</p>}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                  {historico.length === 0 && <p className="text-muted-foreground text-center py-4">Sem histórico registrado.</p>}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
