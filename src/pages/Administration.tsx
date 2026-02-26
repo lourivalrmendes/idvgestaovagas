@@ -57,6 +57,11 @@ export default function Administration() {
   const [cliDialog, setCliDialog] = useState<DimensionItem | 'new' | null>(null);
   const [cliForm, setCliForm] = useState({ nome: '' });
 
+  // Motivos Abertura
+  const [motList, setMotList] = useState<DimensionItem[]>([]);
+  const [motDialog, setMotDialog] = useState<DimensionItem | 'new' | null>(null);
+  const [motForm, setMotForm] = useState({ nome: '' });
+
   const fetchAreas = async () => {
     const { data } = await supabase.from('areas').select('*').order('codigo');
     if (data) setAreas(data as unknown as AreaItem[]);
@@ -77,8 +82,12 @@ export default function Administration() {
     const { data } = await supabase.from('clientes').select('*').order('nome');
     if (data) setCliList(data as unknown as DimensionItem[]);
   };
+  const fetchMotivos = async () => {
+    const { data } = await supabase.from('motivos_abertura').select('*').order('nome');
+    if (data) setMotList(data as unknown as DimensionItem[]);
+  };
 
-  useEffect(() => { fetchAreas(); fetchFuncoes(); fetchCategorias(); fetchUnidades(); fetchClientes(); }, []);
+  useEffect(() => { fetchAreas(); fetchFuncoes(); fetchCategorias(); fetchUnidades(); fetchClientes(); fetchMotivos(); }, []);
 
   // Area CRUD
   const openNewArea = () => { setAreaForm({ codigo: '', nome: '' }); setAreaDialog('new'); };
@@ -185,6 +194,26 @@ export default function Administration() {
     await fetchClientes();
   };
 
+  // Motivo CRUD
+  const openNewMot = () => { setMotForm({ nome: '' }); setMotDialog('new'); };
+  const openEditMot = (m: DimensionItem) => { setMotForm({ nome: m.nome }); setMotDialog(m); };
+  const saveMot = async () => {
+    if (!motForm.nome.trim()) { toast.error('Nome é obrigatório'); return; }
+    if (motDialog === 'new') {
+      const { error } = await supabase.from('motivos_abertura').insert({ nome: motForm.nome.trim() } as any);
+      if (error) { toast.error('Erro: ' + error.message); return; }
+      toast.success('Motivo criado');
+    } else if (motDialog) {
+      const { error } = await supabase.from('motivos_abertura').update({ nome: motForm.nome.trim() } as any).eq('id', motDialog.id);
+      if (error) { toast.error('Erro: ' + error.message); return; }
+      toast.success('Motivo atualizado');
+    }
+    await fetchMotivos(); setMotDialog(null);
+  };
+  const toggleMot = async (m: DimensionItem) => {
+    await supabase.from('motivos_abertura').update({ ativo: !m.ativo } as any).eq('id', m.id);
+    await fetchMotivos();
+  };
 
   const saveSla = async () => {
     await store.setSlaAceite(sla);
@@ -244,6 +273,7 @@ export default function Administration() {
           <TabsTrigger value="categorias">Categorias</TabsTrigger>
           <TabsTrigger value="unidades">Unidades</TabsTrigger>
           <TabsTrigger value="clientes">Clientes</TabsTrigger>
+          <TabsTrigger value="motivos">Motivos</TabsTrigger>
         </TabsList>
 
         {/* SLA */}
@@ -449,6 +479,37 @@ export default function Administration() {
             </Table>
           </div>
         </TabsContent>
+        {/* Motivos Abertura */}
+        <TabsContent value="motivos" className="mt-4 space-y-4">
+          <Button onClick={openNewMot}><Plus className="h-4 w-4 mr-2" />Novo Motivo</Button>
+          <div className="border rounded-xl overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead>Nome</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {motList.map(m => (
+                  <TableRow key={m.id}>
+                    <TableCell className="font-medium">{m.nome}</TableCell>
+                    <TableCell>
+                      <Badge variant={m.ativo ? 'default' : 'outline'} className="text-xs cursor-pointer" onClick={() => toggleMot(m)}>
+                        {m.ativo ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => openEditMot(m)}><Pencil className="h-4 w-4" /></Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {motList.length === 0 && (
+                  <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">Nenhum motivo cadastrado</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
       </Tabs>
 
       {/* User Dialog */}
@@ -542,6 +603,17 @@ export default function Administration() {
             <div><Label>Nome *</Label><Input placeholder="Ex: Empresa ABC" value={cliForm.nome} onChange={e => setCliForm(p => ({ ...p, nome: e.target.value }))} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setCliDialog(null)}>Cancelar</Button><Button onClick={saveCli}>Salvar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Motivo Dialog */}
+      <Dialog open={!!motDialog} onOpenChange={() => setMotDialog(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{motDialog === 'new' ? 'Novo Motivo' : 'Editar Motivo'}</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div><Label>Nome *</Label><Input placeholder="Ex: Vaga Nova" value={motForm.nome} onChange={e => setMotForm(p => ({ ...p, nome: e.target.value }))} /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setMotDialog(null)}>Cancelar</Button><Button onClick={saveMot}>Salvar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

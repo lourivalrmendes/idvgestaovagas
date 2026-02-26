@@ -22,6 +22,7 @@ export default function CreateJob() {
   const [unidades, setUnidades] = useState<{ id: string; nome: string }[]>([]);
   const [categorias, setCategorias] = useState<{ id: string; nome: string }[]>([]);
   const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
+  const [motivos, setMotivos] = useState<{ id: string; nome: string }[]>([]);
 
   useEffect(() => {
     supabase.from('areas').select('id, codigo, nome').eq('ativo', true).order('codigo')
@@ -34,6 +35,8 @@ export default function CreateJob() {
       .then(({ data }) => { if (data) setCategorias(data as any); });
     supabase.from('clientes').select('id, nome').eq('ativo', true).order('nome')
       .then(({ data }) => { if (data) setClientes(data as any); });
+    supabase.from('motivos_abertura').select('id, nome').eq('ativo', true).order('nome')
+      .then(({ data }) => { if (data) setMotivos(data as any); });
   }, []);
 
   const [form, setForm] = useState({
@@ -159,7 +162,13 @@ export default function CreateJob() {
             </div>
             <div><Label>Quantidade de Vagas *</Label><Input type="number" min={1} value={form.quantidade_de_vagas} onChange={e => set('quantidade_de_vagas', parseInt(e.target.value) || 1)} /></div>
             <div><Label>Faixa Salarial</Label><Input value={form.faixa_salarial} onChange={e => set('faixa_salarial', e.target.value)} placeholder="R$ 10.000 - R$ 15.000" /></div>
-            <div><Label>Motivo Abertura</Label><Input value={form.motivo_abertura_vaga} onChange={e => set('motivo_abertura_vaga', e.target.value)} /></div>
+            <div>
+              <Label>Motivo Abertura</Label>
+              <Select value={form.motivo_abertura_vaga} onValueChange={v => set('motivo_abertura_vaga', v)}>
+                <SelectTrigger><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
+                <SelectContent>{motivos.map(m => <SelectItem key={m.id} value={m.nome}>{m.nome}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
             <div>
               <Label>Unidade de Negócio</Label>
               <Select value={form.unidade_negocio} onValueChange={v => set('unidade_negocio', v)}>
