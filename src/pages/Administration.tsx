@@ -17,7 +17,7 @@ import type { AppRole } from '@/hooks/useAuth';
 interface AreaItem { id: string; codigo: string; nome: string; ativo: boolean; }
 interface FuncaoItem { id: string; codigo: string; nome: string; ativo: boolean; }
 
-type UserArea = 'Administrativo' | 'RH' | 'Comercial';
+
 
 const ROLE_LABELS: Record<AppRole, string> = {
   ADMIN: 'Administrador',
@@ -30,7 +30,7 @@ export default function Administration() {
   const store = useAppStore();
   const [sla, setSla] = useState(store.slaAceite);
   const [userDialog, setUserDialog] = useState<any | null>(null);
-  const [userForm, setUserForm] = useState({ nome: '', area: 'RH' as UserArea, role: 'RECRUTADOR' as AppRole, email: '', telefone: '', password: '' });
+  const [userForm, setUserForm] = useState({ nome: '', area: '', role: 'RECRUTADOR' as AppRole, email: '', telefone: '', password: '' });
 
   // Áreas
   const [areas, setAreas] = useState<AreaItem[]>([]);
@@ -221,12 +221,12 @@ export default function Administration() {
   };
 
   const openNewUser = () => {
-    setUserForm({ nome: '', area: 'RH', role: 'RECRUTADOR', email: '', telefone: '', password: '' });
+    setUserForm({ nome: '', area: '', role: 'RECRUTADOR', email: '', telefone: '', password: '' });
     setUserDialog('new');
   };
 
   const openEditUser = (u: any) => {
-    setUserForm({ nome: u.nome, area: u.area as UserArea, role: (u.role || 'RECRUTADOR') as AppRole, email: u.email, telefone: u.telefone, password: '' });
+    setUserForm({ nome: u.nome, area: u.area || '', role: (u.role || 'RECRUTADOR') as AppRole, email: u.email, telefone: u.telefone, password: '' });
     setUserDialog(u);
   };
 
@@ -526,9 +526,13 @@ export default function Administration() {
             )}
             <div>
               <Label>Área</Label>
-              <Select value={userForm.area} onValueChange={v => setUserForm(p => ({ ...p, area: v as UserArea }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="Administrativo">Administrativo</SelectItem><SelectItem value="RH">RH</SelectItem><SelectItem value="Comercial">Comercial</SelectItem></SelectContent>
+              <Select value={userForm.area} onValueChange={v => setUserForm(p => ({ ...p, area: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione uma área" /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  {areas.filter(a => a.ativo).map(a => (
+                    <SelectItem key={a.id} value={a.nome}>{a.nome}</SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>
