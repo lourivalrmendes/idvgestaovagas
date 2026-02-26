@@ -1,0 +1,1 @@
+INSERT INTO public.categorias (nome) VALUES ('SAP');
