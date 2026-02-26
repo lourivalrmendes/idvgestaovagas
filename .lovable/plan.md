@@ -1,32 +1,20 @@
 
-# Plano: CRUD de Motivo de Abertura + Dropdown na Nova Vaga
+
+# Plano: Substituir campo texto por dropdown de Motivos de Abertura
 
 ## Resumo
-Criar a tabela `motivos_abertura` no banco de dados com os registros iniciais (Vaga Nova, Substituicao, Reposicao), adicionar o CRUD na area de Administracao, e substituir o campo texto "Motivo Abertura" por um dropdown no formulario de Nova Vaga.
+O campo "Motivo Abertura" no formulario de Nova Vaga ainda esta como `<Input>` texto livre. Sera substituido por um `<Select>` que le os motivos ativos da tabela `motivos_abertura`.
 
-## Alteracoes
+## Alteracoes no arquivo `src/pages/CreateJob.tsx`
 
-### 1. Criar tabela `motivos_abertura` no banco de dados
-- Colunas: `id` (uuid), `nome` (text), `ativo` (boolean, default true), `created_at`, `updated_at`
-- Inserir 3 registros iniciais: "Vaga Nova", "Substituicao", "Reposicao"
-- Habilitar RLS com as mesmas politicas das demais tabelas de dimensao:
-  - Admin pode gerenciar (ALL)
-  - Authenticated pode ler (SELECT)
+### 1. Adicionar estado e fetch para motivos
+- Adicionar `const [motivos, setMotivos] = useState<{ id: string; nome: string }[]>([]);`
+- No `useEffect` existente, adicionar fetch: `supabase.from('motivos_abertura').select('id, nome').eq('ativo', true).order('nome')`
 
-### 2. Administration.tsx - Nova aba "Motivos Abertura"
-- Adicionar estado `motList`, `motDialog`, `motForm` (mesmo padrao de Categorias/Clientes)
-- Implementar `fetchMotivos`, `saveMot` (insert/update), `toggleMot` (ativar/desativar)
-- Adicionar tab "Motivos" no `TabsList` e `TabsContent` com tabela mostrando Nome, Status e Acoes
+### 2. Substituir Input por Select no campo Motivo Abertura (linha 280-281)
+- Trocar o `<Input>` por um `<Select>` com `<SelectContent className="bg-popover z-50">` para garantir visibilidade do dropdown
+- Mapear os motivos ativos como `<SelectItem>`
 
-### 3. CreateJob.tsx - Dropdown de Motivo Abertura
-- Adicionar estado `motivos` e fetch no `useEffect` existente, buscando da tabela `motivos_abertura` onde `ativo = true`
-- Substituir o `<Input>` do campo `motivo_abertura_vaga` por um `<Select>` com os motivos do banco
+### Arquivo impactado
+- `src/pages/CreateJob.tsx`
 
-### Arquivos impactados
-- **Migracao SQL** - Nova tabela `motivos_abertura` + seed dos 3 registros + RLS
-- `src/pages/Administration.tsx` - Nova aba Motivos com CRUD
-- `src/pages/CreateJob.tsx` - Dropdown de motivo lendo do banco
-
-### Detalhes tecnicos
-- Padrao identico ao ja implementado para Categorias, Clientes e Unidades (DimensionItem com id, nome, ativo)
-- O campo `motivo_abertura_vaga` na tabela `vagas` continuara armazenando o texto do motivo selecionado (sem FK), mantendo consistencia com os demais campos
