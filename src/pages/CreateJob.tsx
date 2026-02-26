@@ -23,6 +23,7 @@ export default function CreateJob() {
   const [categorias, setCategorias] = useState<{ id: string; nome: string }[]>([]);
   const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
   const [motivos, setMotivos] = useState<{ id: string; nome: string }[]>([]);
+  const [usuarios, setUsuarios] = useState<{ id: string; nome: string; area: string }[]>([]);
 
   useEffect(() => {
     supabase
@@ -72,6 +73,14 @@ export default function CreateJob() {
       .order("nome")
       .then(({ data }) => {
         if (data) setMotivos(data as any);
+      });
+    supabase
+      .from("profiles")
+      .select("id, nome, area")
+      .eq("ativo", true)
+      .order("nome")
+      .then(({ data }) => {
+        if (data) setUsuarios(data.map(u => ({ id: u.id, nome: u.nome, area: u.area || '' })));
       });
   }, []);
 
@@ -212,22 +221,32 @@ export default function CreateJob() {
             </div>
             <div>
               <Label>Solicitante</Label>
-              <Input value={form.nome_solicitante} onChange={(e) => set("nome_solicitante", e.target.value)} />
-            </div>
-            <div>
-              <Label>Área</Label>
-              <Select value={form.area_solicitante} onValueChange={(v) => set("area_solicitante", v)}>
+              <Select
+                value={form.nome_solicitante}
+                onValueChange={(v) => {
+                  const user = usuarios.find(u => u.nome === v);
+                  setForm(p => ({
+                    ...p,
+                    nome_solicitante: v,
+                    area_solicitante: user?.area || '',
+                  }));
+                }}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione a área" />
+                  <SelectValue placeholder="Selecione o solicitante" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
-                  {areas.map((a) => (
-                    <SelectItem key={a.id} value={a.nome}>
-                      {a.codigo} - {a.nome}
+                  {usuarios.map((u) => (
+                    <SelectItem key={u.id} value={u.nome}>
+                      {u.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label>Área</Label>
+              <Input value={form.area_solicitante} readOnly disabled className="bg-muted" />
             </div>
           </CardContent>
         </Card>
