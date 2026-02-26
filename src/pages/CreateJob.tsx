@@ -22,6 +22,7 @@ export default function CreateJob() {
   const [unidades, setUnidades] = useState<{ id: string; nome: string }[]>([]);
   const [categorias, setCategorias] = useState<{ id: string; nome: string }[]>([]);
   const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
+  const [motivos, setMotivos] = useState<{ id: string; nome: string }[]>([]);
 
   useEffect(() => {
     supabase
@@ -63,6 +64,14 @@ export default function CreateJob() {
       .order("nome")
       .then(({ data }) => {
         if (data) setClientes(data as any);
+      });
+    supabase
+      .from("motivos_abertura")
+      .select("id, nome")
+      .eq("ativo", true)
+      .order("nome")
+      .then(({ data }) => {
+        if (data) setMotivos(data as any);
       });
   }, []);
 
@@ -278,7 +287,18 @@ export default function CreateJob() {
             </div>
             <div>
               <Label>Motivo Abertura</Label>
-              <Input value={form.motivo_abertura_vaga} onChange={(e) => set("motivo_abertura_vaga", e.target.value)} />
+              <Select value={form.motivo_abertura_vaga} onValueChange={(v) => set("motivo_abertura_vaga", v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o motivo" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  {motivos.map((m) => (
+                    <SelectItem key={m.id} value={m.nome}>
+                      {m.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Unidade de Negócio</Label>
