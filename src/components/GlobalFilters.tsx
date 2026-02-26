@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAppStore } from '@/data/store';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface Filters {
   periodo: string;
@@ -17,8 +19,21 @@ interface Props {
 }
 
 export function GlobalFilters({ filters, onChange }: Props) {
-  const { users, clientes, unidadesNegocio, categorias } = useAppStore();
+  const { users } = useAppStore();
   const recrutadores = users.filter(u => u.role === 'RECRUTADOR');
+
+  const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
+  const [unidadesNegocio, setUnidadesNegocio] = useState<{ id: string; nome: string }[]>([]);
+  const [categorias, setCategorias] = useState<{ id: string; nome: string }[]>([]);
+
+  useEffect(() => {
+    supabase.from('clientes').select('id, nome').eq('ativo', true).order('nome')
+      .then(({ data }) => { if (data) setClientes(data as any); });
+    supabase.from('unidades_negocio').select('id, nome').eq('ativo', true).order('nome')
+      .then(({ data }) => { if (data) setUnidadesNegocio(data as any); });
+    supabase.from('categorias').select('id, nome').eq('ativo', true).order('nome')
+      .then(({ data }) => { if (data) setCategorias(data as any); });
+  }, []);
 
   const set = (key: keyof Filters, val: string) => onChange({ ...filters, [key]: val });
 

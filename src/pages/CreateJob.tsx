@@ -21,6 +21,7 @@ export default function CreateJob() {
   const [funcoes, setFuncoes] = useState<{ id: string; codigo: string; nome: string }[]>([]);
   const [unidades, setUnidades] = useState<{ id: string; nome: string }[]>([]);
   const [categorias, setCategorias] = useState<{ id: string; nome: string }[]>([]);
+  const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
 
   useEffect(() => {
     supabase.from('areas').select('id, codigo, nome').eq('ativo', true).order('codigo')
@@ -31,6 +32,8 @@ export default function CreateJob() {
       .then(({ data }) => { if (data) setUnidades(data as any); });
     supabase.from('categorias').select('id, nome').eq('ativo', true).order('nome')
       .then(({ data }) => { if (data) setCategorias(data as any); });
+    supabase.from('clientes').select('id, nome').eq('ativo', true).order('nome')
+      .then(({ data }) => { if (data) setClientes(data as any); });
   }, []);
 
   const [form, setForm] = useState({
@@ -61,7 +64,7 @@ export default function CreateJob() {
     if ((form.mod_presencial || form.mod_hibrido) && !form.endereco_local_trabalho.trim()) { toast.error('Endereço é obrigatório para modalidade presencial/híbrida'); return; }
 
     // Resolve dimension IDs
-    const clienteId = store.clientes.find(c => c.nome === form.nome_cliente)?.id || null;
+    const clienteId = clientes.find(c => c.nome === form.nome_cliente)?.id || null;
     const unidadeId = unidades.find(u => u.nome === form.unidade_negocio)?.id || null;
     const categoriaId = categorias.find(c => c.nome === form.categoria)?.id || null;
 
@@ -142,7 +145,7 @@ export default function CreateJob() {
               <Label>Cliente *</Label>
               <Select value={form.nome_cliente} onValueChange={v => set('nome_cliente', v)}>
                 <SelectTrigger><SelectValue placeholder="Selecione o cliente" /></SelectTrigger>
-                <SelectContent>{store.clientes.map(c => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}</SelectContent>
+                <SelectContent>{clientes.map(c => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>

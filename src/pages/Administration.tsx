@@ -52,6 +52,11 @@ export default function Administration() {
   const [uniDialog, setUniDialog] = useState<DimensionItem | 'new' | null>(null);
   const [uniForm, setUniForm] = useState({ nome: '' });
 
+  // Clientes
+  const [cliList, setCliList] = useState<DimensionItem[]>([]);
+  const [cliDialog, setCliDialog] = useState<DimensionItem | 'new' | null>(null);
+  const [cliForm, setCliForm] = useState({ nome: '' });
+
   const fetchAreas = async () => {
     const { data } = await supabase.from('areas').select('*').order('codigo');
     if (data) setAreas(data as unknown as AreaItem[]);
@@ -68,8 +73,12 @@ export default function Administration() {
     const { data } = await supabase.from('unidades_negocio').select('*').order('nome');
     if (data) setUniList(data as unknown as DimensionItem[]);
   };
+  const fetchClientes = async () => {
+    const { data } = await supabase.from('clientes').select('*').order('nome');
+    if (data) setCliList(data as unknown as DimensionItem[]);
+  };
 
-  useEffect(() => { fetchAreas(); fetchFuncoes(); fetchCategorias(); fetchUnidades(); }, []);
+  useEffect(() => { fetchAreas(); fetchFuncoes(); fetchCategorias(); fetchUnidades(); fetchClientes(); }, []);
 
   // Area CRUD
   const openNewArea = () => { setAreaForm({ codigo: '', nome: '' }); setAreaDialog('new'); };
@@ -155,6 +164,27 @@ export default function Administration() {
     await fetchUnidades();
   };
 
+  // Cliente CRUD
+  const openNewCli = () => { setCliForm({ nome: '' }); setCliDialog('new'); };
+  const openEditCli = (c: DimensionItem) => { setCliForm({ nome: c.nome }); setCliDialog(c); };
+  const saveCli = async () => {
+    if (!cliForm.nome.trim()) { toast.error('Nome é obrigatório'); return; }
+    if (cliDialog === 'new') {
+      const { error } = await supabase.from('clientes').insert({ nome: cliForm.nome.trim() } as any);
+      if (error) { toast.error('Erro: ' + error.message); return; }
+      toast.success('Cliente criado');
+    } else if (cliDialog) {
+      const { error } = await supabase.from('clientes').update({ nome: cliForm.nome.trim() } as any).eq('id', cliDialog.id);
+      if (error) { toast.error('Erro: ' + error.message); return; }
+      toast.success('Cliente atualizado');
+    }
+    await fetchClientes(); setCliDialog(null);
+  };
+  const toggleCli = async (c: DimensionItem) => {
+    await supabase.from('clientes').update({ ativo: !c.ativo } as any).eq('id', c.id);
+    await fetchClientes();
+  };
+
 
   const saveSla = async () => {
     await store.setSlaAceite(sla);
@@ -213,6 +243,7 @@ export default function Administration() {
           <TabsTrigger value="funcoes">Funções</TabsTrigger>
           <TabsTrigger value="categorias">Categorias</TabsTrigger>
           <TabsTrigger value="unidades">Unidades</TabsTrigger>
+          <TabsTrigger value="clientes">Clientes</TabsTrigger>
         </TabsList>
 
         {/* SLA */}
@@ -386,6 +417,38 @@ export default function Administration() {
             </Table>
           </div>
         </TabsContent>
+
+        {/* Clientes */}
+        <TabsContent value="clientes" className="mt-4 space-y-4">
+          <Button onClick={openNewCli}><Plus className="h-4 w-4 mr-2" />Novo Cliente</Button>
+          <div className="border rounded-xl overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead>Nome</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cliList.map(c => (
+                  <TableRow key={c.id}>
+                    <TableCell className="font-medium">{c.nome}</TableCell>
+                    <TableCell>
+                      <Badge variant={c.ativo ? 'default' : 'outline'} className="text-xs cursor-pointer" onClick={() => toggleCli(c)}>
+                        {c.ativo ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => openEditCli(c)}><Pencil className="h-4 w-4" /></Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {cliList.length === 0 && (
+                  <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">Nenhum cliente cadastrado</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
       </Tabs>
 
       {/* User Dialog */}
@@ -468,6 +531,17 @@ export default function Administration() {
             <div><Label>Nome *</Label><Input placeholder="Ex: São Paulo" value={uniForm.nome} onChange={e => setUniForm(p => ({ ...p, nome: e.target.value }))} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setUniDialog(null)}>Cancelar</Button><Button onClick={saveUni}>Salvar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cliente Dialog */}
+      <Dialog open={!!cliDialog} onOpenChange={() => setCliDialog(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{cliDialog === 'new' ? 'Novo Cliente' : 'Editar Cliente'}</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div><Label>Nome *</Label><Input placeholder="Ex: Empresa ABC" value={cliForm.nome} onChange={e => setCliForm(p => ({ ...p, nome: e.target.value }))} /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setCliDialog(null)}>Cancelar</Button><Button onClick={saveCli}>Salvar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
