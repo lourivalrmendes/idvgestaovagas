@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Eye, Pencil, Trash2, FileText, Loader2 } from 'lucide-react';
+import { Plus, Search, Eye, Pencil, Trash2, FileText, Loader2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { DbCandidato } from '@/data/store';
+import { FileUpload } from '@/components/FileUpload';
 
 export default function Candidates() {
   const store = useAppStore();
@@ -19,7 +19,8 @@ export default function Candidates() {
   const [search, setSearch] = useState('');
   const [createDialog, setCreateDialog] = useState(false);
   const [editDialog, setEditDialog] = useState<DbCandidato | null>(null);
-  const [form, setForm] = useState({ nome: '', cidade: '', estado: '', telefone_celular: '', telefone_outro: '', email: '', linkedin: '', cv_nome: '', cv_tipo: 'PDF' as 'PDF' | 'DOCX' });
+  const [form, setForm] = useState({ nome: '', cidade: '', estado: '', telefone_celular: '', telefone_outro: '', email: '', linkedin: '' });
+  const [cvFile, setCvFile] = useState<File | null>(null);
 
   const filtered = store.candidatos.filter(c => {
     if (!search) return true;
@@ -27,17 +28,25 @@ export default function Candidates() {
     return c.nome.toLowerCase().includes(s) || c.email.toLowerCase().includes(s) || c.cidade.toLowerCase().includes(s);
   });
 
-  const resetForm = () => setForm({ nome: '', cidade: '', estado: '', telefone_celular: '', telefone_outro: '', email: '', linkedin: '', cv_nome: '', cv_tipo: 'PDF' });
+  const resetForm = () => {
+    setForm({ nome: '', cidade: '', estado: '', telefone_celular: '', telefone_outro: '', email: '', linkedin: '' });
+    setCvFile(null);
+  };
 
   const handleCreate = async () => {
     if (!form.nome.trim()) { toast.error('Nome é obrigatório'); return; }
-    await store.addCandidato({
+    const candidatoId = await store.addCandidato({
       nome: form.nome, cidade: form.cidade, estado: form.estado,
       telefone_celular: form.telefone_celular, telefone_outro: form.telefone_outro,
       email: form.email, linkedin: form.linkedin,
-      ultimo_cv_nome: form.cv_nome || null, ultimo_cv_tipo: form.cv_nome ? form.cv_tipo : null,
+      cv_url: null, cv_filename: null,
       created_by_user_id: store.currentUser!.id,
     });
+    
+    if (candidatoId && cvFile) {
+      await store.uploadCandidatoCV(candidatoId, cvFile);
+    }
+    
     toast.success('Candidato criado com sucesso');
     setCreateDialog(false);
     resetForm();
@@ -49,8 +58,12 @@ export default function Candidates() {
       nome: form.nome, cidade: form.cidade, estado: form.estado,
       telefone_celular: form.telefone_celular, telefone_outro: form.telefone_outro,
       email: form.email, linkedin: form.linkedin,
-      ultimo_cv_nome: form.cv_nome || null, ultimo_cv_tipo: form.cv_nome ? form.cv_tipo : null,
     });
+    
+    if (cvFile) {
+      await store.uploadCandidatoCV(editDialog.id, cvFile);
+    }
+    
     toast.success('Candidato atualizado');
     setEditDialog(null);
     resetForm();
@@ -61,8 +74,8 @@ export default function Candidates() {
       nome: c.nome, cidade: c.cidade, estado: c.estado,
       telefone_celular: c.telefone_celular, telefone_outro: c.telefone_outro,
       email: c.email, linkedin: c.linkedin,
-      cv_nome: c.ultimo_cv_nome || '', cv_tipo: (c.ultimo_cv_tipo as 'PDF' | 'DOCX') || 'PDF',
     });
+    setCvFile(null);
     setEditDialog(c);
   };
 
@@ -75,18 +88,12 @@ export default function Candidates() {
       <div><Label>Telefone Celular</Label><Input value={form.telefone_celular} onChange={e => setForm(p => ({ ...p, telefone_celular: e.target.value }))} /></div>
       <div><Label>Telefone Outro</Label><Input value={form.telefone_outro} onChange={e => setForm(p => ({ ...p, telefone_outro: e.target.value }))} /></div>
       <div><Label>LinkedIn</Label><Input value={form.linkedin} onChange={e => setForm(p => ({ ...p, linkedin: e.target.value }))} /></div>
-      <div className="space-y-2">
-        <Label>Último CV (simulado)</Label>
-        <div className="flex gap-2">
-          <Input value={form.cv_nome} onChange={e => setForm(p => ({ ...p, cv_nome: e.target.value }))} placeholder="nome_arquivo.pdf" className="flex-1" />
-          <Select value={form.cv_tipo} onValueChange={v => setForm(p => ({ ...p, cv_tipo: v as 'PDF' | 'DOCX' }))}>
-            <SelectTrigger className="w-[90px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="PDF">PDF</SelectItem>
-              <SelectItem value="DOCX">DOCX</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="md:col-span-2">
+        <Label>CV do Candidato</Label>
+        <FileUpload 
+          onFileSelect={(file) => setCvFile(file)}
+          currentFile={editDialog?.cv_filename || null}
+        />
       </div>
     </div>
   );
@@ -126,7 +133,23 @@ export default function Candidates() {
                 <TableCell className="text-sm">{c.telefone_celular}</TableCell>
                 <TableCell className="text-sm">{c.email}</TableCell>
                 <TableCell className="text-sm text-primary truncate max-w-[150px]">{c.linkedin || '—'}</TableCell>
-                <TableCell>{c.ultimo_cv_nome ? <Badge variant="secondary" className="text-xs"><FileText className="h-3 w-3 mr-1" />{c.ultimo_cv_tipo}</Badge> : '—'}</TableCell>
+                <TableCell>
+                  {c.cv_filename ? (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (c.cv_url) window.open(c.cv_url, '_blank');
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      <span className="truncate max-w-[100px]">{c.cv_filename}</span>
+                    </Button>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">—</span>
+                  )}
+                </TableCell>
                 <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => navigate(`/candidatos/${c.id}`)}><Eye className="h-4 w-4" /></Button>

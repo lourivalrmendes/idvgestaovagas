@@ -59,8 +59,8 @@ export interface DbCandidato {
   telefone_outro: string;
   email: string;
   linkedin: string;
-  ultimo_cv_nome: string | null;
-  ultimo_cv_tipo: string | null;
+  cv_url: string | null;
+  cv_filename: string | null;
   created_by_user_id: string;
 }
 
@@ -165,6 +165,7 @@ interface AppState {
   addCandidato: (data: Omit<DbCandidato, 'id'>) => Promise<string | null>;
   updateCandidato: (id: string, updates: Partial<DbCandidato>) => Promise<void>;
   deleteCandidato: (id: string) => Promise<void>;
+  uploadCandidatoCV: (candidatoId: string, file: File) => Promise<void>;
   // Envios
   envios: DbEnvio[];
   loadingEnvios: boolean;
@@ -255,7 +256,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       id: c.id, nome: c.nome, cidade: c.cidade || '', estado: c.estado || '',
       telefone_celular: c.telefone_celular || '', telefone_outro: c.telefone_outro || '',
       email: c.email || '', linkedin: c.linkedin || '',
-      ultimo_cv_nome: c.ultimo_cv_nome, ultimo_cv_tipo: c.ultimo_cv_tipo,
+      cv_url: c.cv_url, cv_filename: c.cv_filename,
       created_by_user_id: c.created_by_user_id,
     })));
     setLoadingCandidatos(false);
@@ -351,6 +352,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await refreshCandidatos();
   }, [refreshCandidatos]);
 
+  const uploadCandidatoCV = useCallback(async (candidatoId: string, file: File) => {
+    try {
+      const filePath = `${candidatoId}/${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('candidate-cvs')
+        .upload(filePath, file);
+      
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('candidate-cvs')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('candidatos')
+        .update({ cv_url: publicUrl, cv_filename: file.name })
+        .eq('id', candidatoId);
+
+      if (updateError) throw updateError;
+
+      await refreshCandidatos();
+      toast.success('CV enviado com sucesso!');
+    } catch (error: any) {
+      toast.error('Erro ao fazer upload do CV: ' + error.message);
+      throw error;
+    }
+  }, [refreshCandidatos]);
+
   const addEnvio = useCallback(async (data: Omit<DbEnvio, 'id'>) => {
     const { error } = await supabase.from('envios').insert(data);
     if (error) { toast.error('Erro ao associar candidato: ' + error.message); return; }
@@ -392,7 +421,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider value={{
       currentUser, users, loadingUsers, refreshUsers,
       vagas, loadingVagas, refreshVagas, addVaga, updateVaga, deleteVaga, changeVagaStatus,
-      candidatos, loadingCandidatos, refreshCandidatos, addCandidato, updateCandidato, deleteCandidato,
+      candidatos, loadingCandidatos, refreshCandidatos, addCandidato, updateCandidato, deleteCandidato, uploadCandidatoCV,
       envios, loadingEnvios, refreshEnvios, addEnvio, updateEnvioStatus,
       getHistoricoByVaga,
       clientes, unidadesNegocio, categorias,
