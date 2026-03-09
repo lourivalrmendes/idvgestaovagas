@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Mail, Phone, MapPin, Linkedin, FileText } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Linkedin, FileText, Download } from 'lucide-react';
 import { CandidatoStatusVaga, VagaStatus } from '@/types';
 
 export default function CandidateDetail() {
