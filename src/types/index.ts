@@ -65,7 +65,7 @@ export interface Vaga {
   certificacoes: string;
   linguagens_e_frameworks_necessarios: string;
   soft_skills: string;
-  necessario_equipamento: boolean;
+  equipamento: string;
   idioma_ingles: string;
   idioma_espanhol: string;
   observacoes: string;

@@ -34,7 +34,7 @@ const vagaDefaults = {
   certificacoes: '',
   linguagens_e_frameworks_necessarios: 'JavaScript, TypeScript, React',
   soft_skills: 'Comunicação, trabalho em equipe, proatividade',
-  necessario_equipamento: false,
+  equipamento: 'IDV',
   idioma_ingles: 'Intermediário',
   idioma_espanhol: '',
   observacoes: '',
