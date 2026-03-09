@@ -58,8 +58,12 @@ export default function Candidates() {
       nome: form.nome, cidade: form.cidade, estado: form.estado,
       telefone_celular: form.telefone_celular, telefone_outro: form.telefone_outro,
       email: form.email, linkedin: form.linkedin,
-      ultimo_cv_nome: form.cv_nome || null, ultimo_cv_tipo: form.cv_nome ? form.cv_tipo : null,
     });
+    
+    if (cvFile) {
+      await store.uploadCandidatoCV(editDialog.id, cvFile);
+    }
+    
     toast.success('Candidato atualizado');
     setEditDialog(null);
     resetForm();
