@@ -255,7 +255,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       id: c.id, nome: c.nome, cidade: c.cidade || '', estado: c.estado || '',
       telefone_celular: c.telefone_celular || '', telefone_outro: c.telefone_outro || '',
       email: c.email || '', linkedin: c.linkedin || '',
-      ultimo_cv_nome: c.ultimo_cv_nome, ultimo_cv_tipo: c.ultimo_cv_tipo,
+      cv_url: c.cv_url, cv_filename: c.cv_filename,
       created_by_user_id: c.created_by_user_id,
     })));
     setLoadingCandidatos(false);
