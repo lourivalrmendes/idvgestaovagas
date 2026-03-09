@@ -41,7 +41,7 @@ export interface DbVaga {
   certificacoes: string;
   linguagens_e_frameworks_necessarios: string;
   soft_skills: string;
-  necessario_equipamento: boolean;
+  equipamento: string | null;
   ingles_nivel: string | null;
   espanhol_nivel: string | null;
   observacoes: string;
