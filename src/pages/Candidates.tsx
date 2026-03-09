@@ -74,8 +74,8 @@ export default function Candidates() {
       nome: c.nome, cidade: c.cidade, estado: c.estado,
       telefone_celular: c.telefone_celular, telefone_outro: c.telefone_outro,
       email: c.email, linkedin: c.linkedin,
-      cv_nome: c.ultimo_cv_nome || '', cv_tipo: (c.ultimo_cv_tipo as 'PDF' | 'DOCX') || 'PDF',
     });
+    setCvFile(null);
     setEditDialog(c);
   };
 
