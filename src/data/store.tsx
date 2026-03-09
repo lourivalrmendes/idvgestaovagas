@@ -421,7 +421,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider value={{
       currentUser, users, loadingUsers, refreshUsers,
       vagas, loadingVagas, refreshVagas, addVaga, updateVaga, deleteVaga, changeVagaStatus,
-      candidatos, loadingCandidatos, refreshCandidatos, addCandidato, updateCandidato, deleteCandidato,
+      candidatos, loadingCandidatos, refreshCandidatos, addCandidato, updateCandidato, deleteCandidato, uploadCandidatoCV,
       envios, loadingEnvios, refreshEnvios, addEnvio, updateEnvioStatus,
       getHistoricoByVaga,
       clientes, unidadesNegocio, categorias,

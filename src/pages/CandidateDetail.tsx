@@ -31,9 +31,16 @@ export default function CandidateDetail() {
             {candidato.telefone_outro && <div className="flex items-center gap-2 text-sm"><Phone className="h-4 w-4 text-muted-foreground" />{candidato.telefone_outro}</div>}
             <div className="flex items-center gap-2 text-sm"><Mail className="h-4 w-4 text-muted-foreground" />{candidato.email}</div>
             {candidato.linkedin && <div className="flex items-center gap-2 text-sm"><Linkedin className="h-4 w-4 text-muted-foreground" /><span className="truncate">{candidato.linkedin}</span></div>}
-            {candidato.ultimo_cv_nome && (
+            {candidato.cv_filename && (
               <div className="flex items-center gap-2">
-                <Badge variant="secondary"><FileText className="h-3 w-3 mr-1" />{candidato.ultimo_cv_nome}</Badge>
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => candidato.cv_url && window.open(candidato.cv_url, '_blank')}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  {candidato.cv_filename}
+                </Button>
               </div>
             )}
           </CardContent>
