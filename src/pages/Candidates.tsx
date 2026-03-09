@@ -133,7 +133,23 @@ export default function Candidates() {
                 <TableCell className="text-sm">{c.telefone_celular}</TableCell>
                 <TableCell className="text-sm">{c.email}</TableCell>
                 <TableCell className="text-sm text-primary truncate max-w-[150px]">{c.linkedin || '—'}</TableCell>
-                <TableCell>{c.ultimo_cv_nome ? <Badge variant="secondary" className="text-xs"><FileText className="h-3 w-3 mr-1" />{c.ultimo_cv_tipo}</Badge> : '—'}</TableCell>
+                <TableCell>
+                  {c.cv_filename ? (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (c.cv_url) window.open(c.cv_url, '_blank');
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      <span className="truncate max-w-[100px]">{c.cv_filename}</span>
+                    </Button>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">—</span>
+                  )}
+                </TableCell>
                 <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => navigate(`/candidatos/${c.id}`)}><Eye className="h-4 w-4" /></Button>
