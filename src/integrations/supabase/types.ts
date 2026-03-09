@@ -409,6 +409,7 @@ export type Database = {
           data_ultima_alteracao: string
           data_validacao_rh: string | null
           endereco_local_trabalho: string | null
+          equipamento: string | null
           espanhol_nivel: string | null
           faixa_salarial: string | null
           formacao: string | null
@@ -421,7 +422,6 @@ export type Database = {
           modalidade: string | null
           motivo_abertura_vaga: string | null
           motivo_reprovacao_rh: string | null
-          necessario_equipamento: boolean | null
           nivel_senioridade: string | null
           nome_cliente: string | null
           nome_solicitante: string | null
@@ -452,6 +452,7 @@ export type Database = {
           data_ultima_alteracao?: string
           data_validacao_rh?: string | null
           endereco_local_trabalho?: string | null
+          equipamento?: string | null
           espanhol_nivel?: string | null
           faixa_salarial?: string | null
           formacao?: string | null
@@ -464,7 +465,6 @@ export type Database = {
           modalidade?: string | null
           motivo_abertura_vaga?: string | null
           motivo_reprovacao_rh?: string | null
-          necessario_equipamento?: boolean | null
           nivel_senioridade?: string | null
           nome_cliente?: string | null
           nome_solicitante?: string | null
@@ -495,6 +495,7 @@ export type Database = {
           data_ultima_alteracao?: string
           data_validacao_rh?: string | null
           endereco_local_trabalho?: string | null
+          equipamento?: string | null
           espanhol_nivel?: string | null
           faixa_salarial?: string | null
           formacao?: string | null
@@ -507,7 +508,6 @@ export type Database = {
           modalidade?: string | null
           motivo_abertura_vaga?: string | null
           motivo_reprovacao_rh?: string | null
-          necessario_equipamento?: boolean | null
           nivel_senioridade?: string | null
           nome_cliente?: string | null
           nome_solicitante?: string | null

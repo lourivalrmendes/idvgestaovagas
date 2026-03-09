@@ -41,7 +41,7 @@ export interface DbVaga {
   certificacoes: string;
   linguagens_e_frameworks_necessarios: string;
   soft_skills: string;
-  necessario_equipamento: boolean;
+  equipamento: string | null;
   ingles_nivel: string | null;
   espanhol_nivel: string | null;
   observacoes: string;
@@ -131,7 +131,7 @@ export function dbVagaToUiVaga(v: DbVaga) {
     certificacoes: v.certificacoes,
     linguagens_e_frameworks_necessarios: v.linguagens_e_frameworks_necessarios,
     soft_skills: v.soft_skills,
-    necessario_equipamento: v.necessario_equipamento,
+    equipamento: v.equipamento || '',
     idioma_ingles: v.ingles_nivel || '',
     idioma_espanhol: v.espanhol_nivel || '',
     observacoes: v.observacoes,

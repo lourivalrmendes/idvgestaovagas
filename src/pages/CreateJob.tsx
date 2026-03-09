@@ -112,7 +112,7 @@ export default function CreateJob() {
     certificacoes: "",
     linguagens_e_frameworks_necessarios: "",
     soft_skills: "",
-    necessario_equipamento: false,
+    equipamento: "",
     idioma_ingles: "",
     idioma_espanhol: "",
     observacoes: "",
@@ -186,7 +186,7 @@ export default function CreateJob() {
       certificacoes: form.certificacoes,
       linguagens_e_frameworks_necessarios: form.linguagens_e_frameworks_necessarios,
       soft_skills: form.soft_skills,
-      necessario_equipamento: form.necessario_equipamento,
+      equipamento: form.equipamento || null,
       ingles_nivel: form.idioma_ingles || null,
       espanhol_nivel: form.idioma_espanhol || null,
       observacoes: form.observacoes,
@@ -499,12 +499,26 @@ export default function CreateJob() {
                 <Label>Soft Skills</Label>
                 <Input value={form.soft_skills} onChange={(e) => set("soft_skills", e.target.value)} />
               </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={form.necessario_equipamento}
-                  onCheckedChange={(v) => set("necessario_equipamento", v)}
-                />
-                <Label>Necessário Equipamento</Label>
+              <div>
+                <Label>Equipamento</Label>
+                <RadioGroup
+                  value={form.equipamento}
+                  onValueChange={(v) => set("equipamento", v)}
+                  className="flex gap-4 mt-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="PROPRIO" id="eq-proprio" />
+                    <Label htmlFor="eq-proprio" className="font-normal cursor-pointer">Próprio</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="IDV" id="eq-idv" />
+                    <Label htmlFor="eq-idv" className="font-normal cursor-pointer">IDV</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="CLIENTE" id="eq-cliente" />
+                    <Label htmlFor="eq-cliente" className="font-normal cursor-pointer">Cliente</Label>
+                  </div>
+                </RadioGroup>
               </div>
             </div>
           </CardContent>
