@@ -186,7 +186,7 @@ export default function CreateJob() {
       certificacoes: form.certificacoes,
       linguagens_e_frameworks_necessarios: form.linguagens_e_frameworks_necessarios,
       soft_skills: form.soft_skills,
-      necessario_equipamento: form.necessario_equipamento,
+      equipamento: form.equipamento || null,
       ingles_nivel: form.idioma_ingles || null,
       espanhol_nivel: form.idioma_espanhol || null,
       observacoes: form.observacoes,
