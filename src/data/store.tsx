@@ -59,8 +59,8 @@ export interface DbCandidato {
   telefone_outro: string;
   email: string;
   linkedin: string;
-  ultimo_cv_nome: string | null;
-  ultimo_cv_tipo: string | null;
+  cv_url: string | null;
+  cv_filename: string | null;
   created_by_user_id: string;
 }
 
