@@ -112,7 +112,7 @@ export default function CreateJob() {
     certificacoes: "",
     linguagens_e_frameworks_necessarios: "",
     soft_skills: "",
-    necessario_equipamento: false,
+    equipamento: "",
     idioma_ingles: "",
     idioma_espanhol: "",
     observacoes: "",
