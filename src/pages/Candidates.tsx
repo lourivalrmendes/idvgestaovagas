@@ -88,18 +88,12 @@ export default function Candidates() {
       <div><Label>Telefone Celular</Label><Input value={form.telefone_celular} onChange={e => setForm(p => ({ ...p, telefone_celular: e.target.value }))} /></div>
       <div><Label>Telefone Outro</Label><Input value={form.telefone_outro} onChange={e => setForm(p => ({ ...p, telefone_outro: e.target.value }))} /></div>
       <div><Label>LinkedIn</Label><Input value={form.linkedin} onChange={e => setForm(p => ({ ...p, linkedin: e.target.value }))} /></div>
-      <div className="space-y-2">
-        <Label>Último CV (simulado)</Label>
-        <div className="flex gap-2">
-          <Input value={form.cv_nome} onChange={e => setForm(p => ({ ...p, cv_nome: e.target.value }))} placeholder="nome_arquivo.pdf" className="flex-1" />
-          <Select value={form.cv_tipo} onValueChange={v => setForm(p => ({ ...p, cv_tipo: v as 'PDF' | 'DOCX' }))}>
-            <SelectTrigger className="w-[90px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="PDF">PDF</SelectItem>
-              <SelectItem value="DOCX">DOCX</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="md:col-span-2">
+        <Label>CV do Candidato</Label>
+        <FileUpload 
+          onFileSelect={(file) => setCvFile(file)}
+          currentFile={editDialog?.cv_filename || null}
+        />
       </div>
     </div>
   );
