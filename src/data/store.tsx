@@ -352,6 +352,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await refreshCandidatos();
   }, [refreshCandidatos]);
 
+  const uploadCandidatoCV = useCallback(async (candidatoId: string, file: File) => {
+    try {
+      const filePath = `${candidatoId}/${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('candidate-cvs')
+        .upload(filePath, file);
+      
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('candidate-cvs')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('candidatos')
+        .update({ cv_url: publicUrl, cv_filename: file.name })
+        .eq('id', candidatoId);
+
+      if (updateError) throw updateError;
+
+      await refreshCandidatos();
+      toast.success('CV enviado com sucesso!');
+    } catch (error: any) {
+      toast.error('Erro ao fazer upload do CV: ' + error.message);
+      throw error;
+    }
+  }, [refreshCandidatos]);
+
   const addEnvio = useCallback(async (data: Omit<DbEnvio, 'id'>) => {
     const { error } = await supabase.from('envios').insert(data);
     if (error) { toast.error('Erro ao associar candidato: ' + error.message); return; }
