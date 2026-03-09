@@ -46,6 +46,8 @@ export type Database = {
           cidade: string | null
           created_at: string
           created_by_user_id: string
+          cv_filename: string | null
+          cv_url: string | null
           email: string | null
           estado: string | null
           id: string
@@ -53,14 +55,14 @@ export type Database = {
           nome: string
           telefone_celular: string | null
           telefone_outro: string | null
-          ultimo_cv_nome: string | null
-          ultimo_cv_tipo: string | null
           updated_at: string
         }
         Insert: {
           cidade?: string | null
           created_at?: string
           created_by_user_id: string
+          cv_filename?: string | null
+          cv_url?: string | null
           email?: string | null
           estado?: string | null
           id?: string
@@ -68,14 +70,14 @@ export type Database = {
           nome: string
           telefone_celular?: string | null
           telefone_outro?: string | null
-          ultimo_cv_nome?: string | null
-          ultimo_cv_tipo?: string | null
           updated_at?: string
         }
         Update: {
           cidade?: string | null
           created_at?: string
           created_by_user_id?: string
+          cv_filename?: string | null
+          cv_url?: string | null
           email?: string | null
           estado?: string | null
           id?: string
@@ -83,8 +85,6 @@ export type Database = {
           nome?: string
           telefone_celular?: string | null
           telefone_outro?: string | null
-          ultimo_cv_nome?: string | null
-          ultimo_cv_tipo?: string | null
           updated_at?: string
         }
         Relationships: [
