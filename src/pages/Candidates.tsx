@@ -28,17 +28,25 @@ export default function Candidates() {
     return c.nome.toLowerCase().includes(s) || c.email.toLowerCase().includes(s) || c.cidade.toLowerCase().includes(s);
   });
 
-  const resetForm = () => setForm({ nome: '', cidade: '', estado: '', telefone_celular: '', telefone_outro: '', email: '', linkedin: '', cv_nome: '', cv_tipo: 'PDF' });
+  const resetForm = () => {
+    setForm({ nome: '', cidade: '', estado: '', telefone_celular: '', telefone_outro: '', email: '', linkedin: '' });
+    setCvFile(null);
+  };
 
   const handleCreate = async () => {
     if (!form.nome.trim()) { toast.error('Nome é obrigatório'); return; }
-    await store.addCandidato({
+    const candidatoId = await store.addCandidato({
       nome: form.nome, cidade: form.cidade, estado: form.estado,
       telefone_celular: form.telefone_celular, telefone_outro: form.telefone_outro,
       email: form.email, linkedin: form.linkedin,
-      ultimo_cv_nome: form.cv_nome || null, ultimo_cv_tipo: form.cv_nome ? form.cv_tipo : null,
+      cv_url: null, cv_filename: null,
       created_by_user_id: store.currentUser!.id,
     });
+    
+    if (candidatoId && cvFile) {
+      await store.uploadCandidatoCV(candidatoId, cvFile);
+    }
+    
     toast.success('Candidato criado com sucesso');
     setCreateDialog(false);
     resetForm();
