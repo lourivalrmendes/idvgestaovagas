@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Eye, Pencil, Trash2, FileText, Loader2 } from 'lucide-react';
+import { Plus, Search, Eye, Pencil, Trash2, FileText, Loader2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { DbCandidato } from '@/data/store';
+import { FileUpload } from '@/components/FileUpload';
 
 export default function Candidates() {
   const store = useAppStore();
@@ -19,7 +19,8 @@ export default function Candidates() {
   const [search, setSearch] = useState('');
   const [createDialog, setCreateDialog] = useState(false);
   const [editDialog, setEditDialog] = useState<DbCandidato | null>(null);
-  const [form, setForm] = useState({ nome: '', cidade: '', estado: '', telefone_celular: '', telefone_outro: '', email: '', linkedin: '', cv_nome: '', cv_tipo: 'PDF' as 'PDF' | 'DOCX' });
+  const [form, setForm] = useState({ nome: '', cidade: '', estado: '', telefone_celular: '', telefone_outro: '', email: '', linkedin: '' });
+  const [cvFile, setCvFile] = useState<File | null>(null);
 
   const filtered = store.candidatos.filter(c => {
     if (!search) return true;
