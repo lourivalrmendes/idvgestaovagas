@@ -334,6 +334,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [refreshVagas]);
 
   const addCandidato = useCallback(async (data: Omit<DbCandidato, 'id'>): Promise<string | null> => {
+    // Check for duplicate (telefone_celular + email)
+    if (data.telefone_celular && data.email) {
+      const { data: existing } = await supabase
+        .from('candidatos')
+        .select('id')
+        .eq('telefone_celular', data.telefone_celular)
+        .eq('email', data.email)
+        .maybeSingle();
+      if (existing) {
+        toast.error('Candidato já cadastrado com este telefone e e-mail.');
+        return null;
+      }
+    }
     const { data: result, error } = await supabase.from('candidatos').insert(data).select().single();
     if (error) { toast.error('Erro ao criar candidato: ' + error.message); return null; }
     await refreshCandidatos();

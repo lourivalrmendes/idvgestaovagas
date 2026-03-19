@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX idx_candidatos_tel_email ON public.candidatos (telefone_celular, email);
