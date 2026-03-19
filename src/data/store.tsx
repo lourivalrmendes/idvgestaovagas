@@ -94,7 +94,7 @@ export interface DimensionItem {
 export function dbVagaToUiVaga(v: DbVaga) {
   // Map tipo_contratacao string to object
   const tc = v.tipo_contratacao || '';
-  const tipo_contratacao = { pj: tc === 'PJ', clt: tc === 'CLT', alocacao: tc === 'ALOCACAO' };
+  const tipo_contratacao = { pj: tc === 'PJ', clt: tc === 'CLT' };
   const mod = v.modalidade || '';
   const modalidade_contratacao = { presencial: mod === 'PRESENCIAL', hibrido: mod === 'HIBRIDO', remoto: mod === 'REMOTO' };
 

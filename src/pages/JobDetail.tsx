@@ -252,7 +252,6 @@ export default function JobDetail() {
                     [
                       vaga.tipo_contratacao.clt && "CLT",
                       vaga.tipo_contratacao.pj && "PJ",
-                      vaga.tipo_contratacao.alocacao && "Alocação",
                     ]
                       .filter(Boolean)
                       .join(", "),

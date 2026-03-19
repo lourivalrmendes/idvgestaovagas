@@ -19,7 +19,7 @@ const vagaDefaults = {
   area_solicitante: 'Comercial',
   motivo_abertura_vaga: 'Expansão do time',
   faixa_salarial: 'R$ 10.000 - R$ 15.000',
-  tipo_contratacao: { pj: false, clt: true, alocacao: false },
+  tipo_contratacao: { pj: false, clt: true },
   tempo_de_contrato: '',
   horario_trabalho: '09:00 - 18:00',
   quantidade_horas_mes: 168,

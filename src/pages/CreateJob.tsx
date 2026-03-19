@@ -95,7 +95,6 @@ export default function CreateJob() {
     area_solicitante: "",
     tipo_clt: false,
     tipo_pj: false,
-    tipo_alocacao: false,
     tempo_de_contrato: "",
     horario_trabalho: "09:00 - 18:00",
     quantidade_horas_mes: 168,
@@ -136,7 +135,7 @@ export default function CreateJob() {
       toast.error("Quantidade de vagas é obrigatória");
       return;
     }
-    if (!form.tipo_clt && !form.tipo_pj && !form.tipo_alocacao) {
+    if (!form.tipo_clt && !form.tipo_pj) {
       toast.error("Selecione pelo menos um tipo de contratação");
       return;
     }
@@ -154,7 +153,7 @@ export default function CreateJob() {
     const unidadeId = unidades.find((u) => u.nome === form.unidade_negocio)?.id || null;
     const categoriaId = categorias.find((c) => c.nome === form.categoria)?.id || null;
 
-    const tipo = form.tipo_clt ? "CLT" : form.tipo_pj ? "PJ" : "ALOCACAO";
+    const tipo = form.tipo_clt ? "CLT" : "PJ";
     const modalidade = form.mod_presencial ? "PRESENCIAL" : form.mod_hibrido ? "HIBRIDO" : "REMOTO";
 
     setSubmitting(true);
@@ -361,7 +360,7 @@ export default function CreateJob() {
             <div>
               <Label className="mb-2 block">Tipo de Contratação *</Label>
               <div className="flex gap-6">
-                {(["tipo_clt", "tipo_pj", "tipo_alocacao"] as const).map((key) => (
+                {(["tipo_clt", "tipo_pj"] as const).map((key) => (
                   <label key={key} className="flex items-center gap-2 text-sm">
                     <Checkbox checked={form[key]} onCheckedChange={(v) => set(key, v)} />
                     {key.replace("tipo_", "").toUpperCase()}

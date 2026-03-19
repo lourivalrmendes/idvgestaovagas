@@ -50,7 +50,7 @@ export interface Vaga {
   quantidade_de_vagas: number | null;
   funcao: string;
   faixa_salarial: string;
-  tipo_contratacao: { pj: boolean; clt: boolean; alocacao: boolean };
+  tipo_contratacao: { pj: boolean; clt: boolean };
   tempo_de_contrato: string;
   horario_trabalho: string;
   quantidade_horas_mes: number | null;
