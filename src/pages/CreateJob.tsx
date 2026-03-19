@@ -95,7 +95,6 @@ export default function CreateJob() {
     area_solicitante: "",
     tipo_clt: false,
     tipo_pj: false,
-    tipo_alocacao: false,
     tempo_de_contrato: "",
     horario_trabalho: "09:00 - 18:00",
     quantidade_horas_mes: 168,
