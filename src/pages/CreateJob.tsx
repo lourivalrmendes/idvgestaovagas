@@ -153,7 +153,7 @@ export default function CreateJob() {
     const unidadeId = unidades.find((u) => u.nome === form.unidade_negocio)?.id || null;
     const categoriaId = categorias.find((c) => c.nome === form.categoria)?.id || null;
 
-    const tipo = form.tipo_clt ? "CLT" : form.tipo_pj ? "PJ" : "ALOCACAO";
+    const tipo = form.tipo_clt ? "CLT" : "PJ";
     const modalidade = form.mod_presencial ? "PRESENCIAL" : form.mod_hibrido ? "HIBRIDO" : "REMOTO";
 
     setSubmitting(true);
