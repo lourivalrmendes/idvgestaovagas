@@ -1,20 +1,20 @@
 
-# Plano: Corrigir exibicao da Area na aba Usuarios
 
-## Problema
-A coluna "Area" ja existe na tabela de usuarios, porem a maioria dos usuarios tem o campo `area` vazio no banco de dados. Alem disso, o dropdown de area no formulario de edicao de usuario usa valores fixos ("Administrativo", "RH", "Comercial") em vez de ler da tabela `areas` do banco.
+## Plano: Remover opção "Alocação" do tipo de contratação
 
-## Alteracoes no arquivo `src/pages/Administration.tsx`
+Remover a opção "Alocação" de todos os locais onde aparece, mantendo apenas CLT e PJ.
 
-### 1. Substituir dropdown fixo por dinamico no formulario de usuario
-- Remover o tipo fixo `UserArea` e o hardcoded no `SelectContent`
-- Usar o estado `areas` (ja carregado pelo `fetchAreas`) para popular o dropdown de Area no dialogo de usuario
-- Filtrar apenas areas ativas (`ativo === true`)
-- Gravar o `nome` da area selecionada no campo `area` do perfil
+### Arquivos a alterar
 
-### 2. Ajustar o tipo do campo `area` no `userForm`
-- Trocar `area: 'RH' as UserArea` por `area: ''` (string livre)
-- Remover o tipo `UserArea` que nao sera mais necessario
+1. **`src/types/index.ts`** — Remover `alocacao` do tipo `tipo_contratacao`
+2. **`src/pages/CreateJob.tsx`** — Remover `tipo_alocacao` do formulário, estado inicial e validação
+3. **`src/pages/JobDetail.tsx`** — Remover referência a `alocacao` na exibição
+4. **`src/data/store.tsx`** — Remover mapeamento de `ALOCACAO`
+5. **`src/data/mockData.ts`** — Remover `alocacao` dos dados mock
 
-### Arquivo impactado
-- `src/pages/Administration.tsx` - linhas 20, 33, 529-532
+### Detalhes técnicos
+
+- O tipo `tipo_contratacao` passa de `{ pj: boolean; clt: boolean; alocacao: boolean }` para `{ pj: boolean; clt: boolean }`
+- No formulário de criação, o array de checkboxes passa de `["tipo_clt", "tipo_pj", "tipo_alocacao"]` para `["tipo_clt", "tipo_pj"]`
+- A validação e o mapeamento de tipo são ajustados para considerar apenas CLT e PJ
+
