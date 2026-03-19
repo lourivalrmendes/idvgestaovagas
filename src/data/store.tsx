@@ -163,7 +163,7 @@ interface AppState {
   loadingCandidatos: boolean;
   refreshCandidatos: () => Promise<void>;
   addCandidato: (data: Omit<DbCandidato, 'id'>) => Promise<string | null>;
-  updateCandidato: (id: string, updates: Partial<DbCandidato>) => Promise<void>;
+  updateCandidato: (id: string, updates: Partial<DbCandidato>) => Promise<boolean>;
   deleteCandidato: (id: string) => Promise<void>;
   uploadCandidatoCV: (candidatoId: string, file: File) => Promise<void>;
   // Envios
