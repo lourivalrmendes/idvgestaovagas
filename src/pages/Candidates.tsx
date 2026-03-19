@@ -43,7 +43,9 @@ export default function Candidates() {
       created_by_user_id: store.currentUser!.id,
     });
     
-    if (candidatoId && cvFile) {
+    if (!candidatoId) return;
+
+    if (cvFile) {
       await store.uploadCandidatoCV(candidatoId, cvFile);
     }
     
