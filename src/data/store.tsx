@@ -353,10 +353,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return result?.id || null;
   }, [refreshCandidatos]);
 
-  const updateCandidato = useCallback(async (id: string, updates: Partial<DbCandidato>) => {
+  const updateCandidato = useCallback(async (id: string, updates: Partial<DbCandidato>): Promise<boolean> => {
+    // Check for duplicate telefone_celular + email (excluding current record)
+    if (updates.telefone_celular && updates.email) {
+      const { data: existing } = await supabase
+        .from('candidatos')
+        .select('id')
+        .eq('telefone_celular', updates.telefone_celular)
+        .eq('email', updates.email)
+        .neq('id', id)
+        .maybeSingle();
+      if (existing) {
+        toast.error('Erro de Atualização!! Dados de E-mail e Telefone já existem na base. Tente novamente.');
+        return false;
+      }
+    }
     const { error } = await supabase.from('candidatos').update(updates).eq('id', id);
-    if (error) { toast.error('Erro: ' + error.message); return; }
+    if (error) { toast.error('Erro: ' + error.message); return false; }
     await refreshCandidatos();
+    return true;
   }, [refreshCandidatos]);
 
   const deleteCandidato = useCallback(async (id: string) => {

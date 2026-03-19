@@ -56,11 +56,12 @@ export default function Candidates() {
 
   const handleEdit = async () => {
     if (!editDialog) return;
-    await store.updateCandidato(editDialog.id, {
+    const success = await store.updateCandidato(editDialog.id, {
       nome: form.nome, cidade: form.cidade, estado: form.estado,
       telefone_celular: form.telefone_celular, telefone_outro: form.telefone_outro,
       email: form.email, linkedin: form.linkedin,
     });
+    if (!success) return;
     
     if (cvFile) {
       await store.uploadCandidatoCV(editDialog.id, cvFile);
