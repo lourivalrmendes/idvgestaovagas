@@ -343,7 +343,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .eq('email', data.email)
         .maybeSingle();
       if (existing) {
-        toast.error('Candidato já cadastrado com este telefone e e-mail.');
+        toast.error('Candidato já existe na Base de Dados. Verifique o e-mail e telefone informados.');
         return null;
       }
     }
