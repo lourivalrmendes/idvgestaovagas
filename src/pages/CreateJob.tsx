@@ -135,7 +135,7 @@ export default function CreateJob() {
       toast.error("Quantidade de vagas é obrigatória");
       return;
     }
-    if (!form.tipo_clt && !form.tipo_pj && !form.tipo_alocacao) {
+    if (!form.tipo_clt && !form.tipo_pj) {
       toast.error("Selecione pelo menos um tipo de contratação");
       return;
     }
