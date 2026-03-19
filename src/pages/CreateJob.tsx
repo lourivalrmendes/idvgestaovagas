@@ -360,7 +360,7 @@ export default function CreateJob() {
             <div>
               <Label className="mb-2 block">Tipo de Contratação *</Label>
               <div className="flex gap-6">
-                {(["tipo_clt", "tipo_pj", "tipo_alocacao"] as const).map((key) => (
+                {(["tipo_clt", "tipo_pj"] as const).map((key) => (
                   <label key={key} className="flex items-center gap-2 text-sm">
                     <Checkbox checked={form[key]} onCheckedChange={(v) => set(key, v)} />
                     {key.replace("tipo_", "").toUpperCase()}
