@@ -166,6 +166,7 @@ interface AppState {
   updateCandidato: (id: string, updates: Partial<DbCandidato>) => Promise<boolean>;
   deleteCandidato: (id: string) => Promise<void>;
   uploadCandidatoCV: (candidatoId: string, file: File) => Promise<void>;
+  removeCandidatoCV: (candidatoId: string) => Promise<void>;
   // Envios
   envios: DbEnvio[];
   loadingEnvios: boolean;
@@ -380,8 +381,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await refreshCandidatos();
   }, [refreshCandidatos]);
 
+  const removeCandidatoCVFiles = useCallback(async (candidatoId: string) => {
+    const { data: files, error: listError } = await supabase.storage
+      .from('candidate-cvs')
+      .list(candidatoId);
+
+    if (listError) throw listError;
+
+    const filePaths = (files || [])
+      .filter((file) => file.name)
+      .map((file) => `${candidatoId}/${file.name}`);
+
+    if (filePaths.length === 0) return;
+
+    const { error: removeError } = await supabase.storage
+      .from('candidate-cvs')
+      .remove(filePaths);
+
+    if (removeError) throw removeError;
+  }, []);
+
   const uploadCandidatoCV = useCallback(async (candidatoId: string, file: File) => {
     try {
+      await removeCandidatoCVFiles(candidatoId);
+
       const filePath = `${candidatoId}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from('candidate-cvs')
@@ -406,7 +429,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toast.error('Erro ao fazer upload do CV: ' + error.message);
       throw error;
     }
-  }, [refreshCandidatos]);
+  }, [refreshCandidatos, removeCandidatoCVFiles]);
+
+  const removeCandidatoCV = useCallback(async (candidatoId: string) => {
+    try {
+      await removeCandidatoCVFiles(candidatoId);
+
+      const { error } = await supabase
+        .from('candidatos')
+        .update({ cv_url: null, cv_filename: null })
+        .eq('id', candidatoId);
+
+      if (error) throw error;
+
+      await refreshCandidatos();
+      toast.success('CV removido com sucesso!');
+    } catch (error: any) {
+      toast.error('Erro ao remover o CV: ' + error.message);
+      throw error;
+    }
+  }, [refreshCandidatos, removeCandidatoCVFiles]);
 
   const addEnvio = useCallback(async (data: Omit<DbEnvio, 'id'>) => {
     const { error } = await supabase.from('envios').insert(data);
@@ -449,7 +491,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider value={{
       currentUser, users, loadingUsers, refreshUsers,
       vagas, loadingVagas, refreshVagas, addVaga, updateVaga, deleteVaga, changeVagaStatus,
-      candidatos, loadingCandidatos, refreshCandidatos, addCandidato, updateCandidato, deleteCandidato, uploadCandidatoCV,
+      candidatos, loadingCandidatos, refreshCandidatos, addCandidato, updateCandidato, deleteCandidato, uploadCandidatoCV, removeCandidatoCV,
       envios, loadingEnvios, refreshEnvios, addEnvio, updateEnvioStatus,
       getHistoricoByVaga,
       clientes, unidadesNegocio, categorias,

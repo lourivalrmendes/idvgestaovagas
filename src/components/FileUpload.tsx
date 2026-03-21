@@ -1,11 +1,12 @@
-import { useCallback, useState } from 'react';
-import { Upload, X, FileText } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+import { Upload, X, FileText, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
   currentFile?: string | null;
   maxSizeMB?: number;
+  onRemove?: () => Promise<void> | void;
 }
 
 const ALLOWED_TYPES = ['.pdf', '.docx', '.doc', '.txt'];
@@ -16,9 +17,11 @@ const ALLOWED_MIME_TYPES = [
   'text/plain'
 ];
 
-export function FileUpload({ onFileSelect, currentFile, maxSizeMB = 10 }: FileUploadProps) {
+export function FileUpload({ onFileSelect, currentFile, maxSizeMB = 10, onRemove }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const validateFile = (file: File): boolean => {
     const maxSize = maxSizeMB * 1024 * 1024;
@@ -66,8 +69,32 @@ export function FileUpload({ onFileSelect, currentFile, maxSizeMB = 10 }: FileUp
     }
   };
 
-  const clearFile = () => {
+  const clearInputValue = () => {
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
+  };
+
+  const clearFile = async () => {
+    if (selectedFileName) {
+      setSelectedFileName(null);
+      clearInputValue();
+      return;
+    }
+
+    if (currentFile && onRemove) {
+      try {
+        setIsRemoving(true);
+        await onRemove();
+        clearInputValue();
+      } finally {
+        setIsRemoving(false);
+      }
+      return;
+    }
+
     setSelectedFileName(null);
+    clearInputValue();
   };
 
   const displayFileName = selectedFileName || currentFile;
@@ -96,8 +123,9 @@ export function FileUpload({ onFileSelect, currentFile, maxSizeMB = 10 }: FileUp
               size="sm"
               onClick={clearFile}
               className="flex-shrink-0"
+              disabled={isRemoving}
             >
-              <X className="h-4 w-4" />
+              {isRemoving ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
             </Button>
           </div>
         ) : (
@@ -116,6 +144,7 @@ export function FileUpload({ onFileSelect, currentFile, maxSizeMB = 10 }: FileUp
       {!displayFileName && (
         <div>
           <input
+            ref={inputRef}
             type="file"
             id="cv-upload"
             accept={ALLOWED_TYPES.join(',')}
@@ -126,7 +155,7 @@ export function FileUpload({ onFileSelect, currentFile, maxSizeMB = 10 }: FileUp
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => document.getElementById('cv-upload')?.click()}
+            onClick={() => inputRef.current?.click()}
             className="w-full"
           >
             <Upload className="h-4 w-4 mr-2" />
