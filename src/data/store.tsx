@@ -199,6 +199,36 @@ export const useAppStore = () => {
 export function AppProvider({ children }: { children: ReactNode }) {
   const { user, profile, role } = useAuth();
 
+  const sanitizeStorageFileName = useCallback((fileName: string) => {
+    const trimmedName = fileName.trim();
+    const extensionIndex = trimmedName.lastIndexOf('.');
+    const hasExtension = extensionIndex > 0;
+    const rawBaseName = hasExtension ? trimmedName.slice(0, extensionIndex) : trimmedName;
+    const rawExtension = hasExtension ? trimmedName.slice(extensionIndex + 1) : '';
+
+    const normalizeSegment = (value: string) => {
+      const normalized = value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9_-]+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
+      return normalized || 'arquivo';
+    };
+
+    const safeBaseName = normalizeSegment(rawBaseName);
+    const safeExtension = rawExtension
+      ? rawExtension
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-zA-Z0-9]+/g, '')
+          .toLowerCase()
+      : '';
+
+    return safeExtension ? `${safeBaseName}.${safeExtension}` : safeBaseName;
+  }, []);
+
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [vagas, setVagas] = useState<any[]>([]);
@@ -405,7 +435,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       await removeCandidatoCVFiles(candidatoId);
 
-      const filePath = `${candidatoId}/${Date.now()}_${file.name}`;
+      const sanitizedFileName = sanitizeStorageFileName(file.name);
+      const filePath = `${candidatoId}/${Date.now()}_${sanitizedFileName}`;
       const { error: uploadError } = await supabase.storage
         .from('candidate-cvs')
         .upload(filePath, file);
@@ -429,7 +460,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toast.error('Erro ao fazer upload do CV: ' + error.message);
       throw error;
     }
-  }, [refreshCandidatos, removeCandidatoCVFiles]);
+  }, [refreshCandidatos, removeCandidatoCVFiles, sanitizeStorageFileName]);
 
   const removeCandidatoCV = useCallback(async (candidatoId: string) => {
     try {
