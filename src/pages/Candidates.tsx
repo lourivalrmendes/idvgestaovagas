@@ -1,32 +1,80 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/data/store';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Eye, Pencil, Trash2, FileText, Loader2, Download } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Search, Eye, Pencil, Trash2, Loader2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { DbCandidato } from '@/data/store';
 import { FileUpload } from '@/components/FileUpload';
+
+interface FuncaoOption {
+  id: string;
+  codigo: string;
+  nome: string;
+}
 
 export default function Candidates() {
   const store = useAppStore();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [selectedCargo, setSelectedCargo] = useState('all');
+  const [funcoes, setFuncoes] = useState<FuncaoOption[]>([]);
   const [createDialog, setCreateDialog] = useState(false);
   const [editDialog, setEditDialog] = useState<DbCandidato | null>(null);
   const [form, setForm] = useState({ nome: '', cidade: '', estado: '', telefone_celular: '', telefone_outro: '', email: '', linkedin: '' });
   const [cvFile, setCvFile] = useState<File | null>(null);
 
-  const filtered = store.candidatos.filter(c => {
-    if (!search) return true;
-    const s = search.toLowerCase();
-    return c.nome.toLowerCase().includes(s) || c.email.toLowerCase().includes(s) || c.cidade.toLowerCase().includes(s);
-  });
+  useEffect(() => {
+    supabase
+      .from('funcoes')
+      .select('id, codigo, nome')
+      .eq('ativo', true)
+      .order('codigo')
+      .then(({ data, error }) => {
+        if (error) {
+          toast.error('Erro ao carregar cargos');
+          return;
+        }
+
+        setFuncoes(data || []);
+      });
+  }, []);
+
+  const candidatosPorCargo = useMemo(() => {
+    if (selectedCargo === 'all') return null;
+
+    const vagaIds = new Set(
+      store.vagas
+        .filter((vaga) => vaga.funcao === selectedCargo)
+        .map((vaga) => vaga.dbId ?? vaga.id)
+    );
+
+    return new Set(
+      store.envios
+        .filter((envio) => vagaIds.has(envio.vaga_id))
+        .map((envio) => envio.candidato_id)
+    );
+  }, [selectedCargo, store.envios, store.vagas]);
+
+  const filtered = useMemo(() => {
+    const s = search.trim().toLowerCase();
+
+    return store.candidatos.filter((candidato) => {
+      const matchesSearch = !s || [candidato.nome, candidato.email, candidato.cidade]
+        .some((value) => value.toLowerCase().includes(s));
+
+      const matchesCargo = !candidatosPorCargo || candidatosPorCargo.has(candidato.id);
+
+      return matchesSearch && matchesCargo;
+    });
+  }, [candidatosPorCargo, search, store.candidatos]);
 
   const resetForm = () => {
     setForm({ nome: '', cidade: '', estado: '', telefone_celular: '', telefone_outro: '', email: '', linkedin: '' });
@@ -117,9 +165,24 @@ export default function Candidates() {
   return (
     <div className="page-container animate-fade-in">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar candidato..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 w-[300px] bg-card" />
+        <div className="flex flex-1 flex-wrap items-center gap-3">
+          <div className="relative min-w-[280px] flex-1 max-w-[320px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Buscar candidato..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-card" />
+          </div>
+          <Select value={selectedCargo} onValueChange={setSelectedCargo}>
+            <SelectTrigger className="w-full bg-card sm:w-[280px]">
+              <SelectValue placeholder="Filtrar por cargo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os cargos</SelectItem>
+              {funcoes.map((funcao) => (
+                <SelectItem key={funcao.id} value={funcao.nome}>
+                  {funcao.codigo} - {funcao.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <Button onClick={() => { resetForm(); setCreateDialog(true); }}><Plus className="h-4 w-4 mr-2" />Novo Candidato</Button>
       </div>
