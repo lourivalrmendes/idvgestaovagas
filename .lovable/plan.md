@@ -1,38 +1,56 @@
 
+Objetivo: fazer o botão “X” do CV, na edição de candidato, realmente excluir o arquivo salvo no backend e liberar a troca por um novo arquivo.
 
-## Plano: Validação de duplicidade de candidato (telefone + email)
+1. Identificar a causa do problema atual
+- Hoje o componente `FileUpload` apenas limpa o nome exibido localmente.
+- Ele não chama nenhuma ação para apagar o arquivo do bucket `candidate-cvs`.
+- Ele também não limpa os campos `cv_url` e `cv_filename` do candidato na tabela `candidatos`.
 
-Impedir inserção de candidatos duplicados usando a combinação de **telefone celular + email** como chave única.
+2. Ajustar o `FileUpload` para suportar remoção real
+- Evoluir `src/components/FileUpload.tsx` para aceitar um callback de remoção do arquivo atual.
+- Diferenciar dois cenários:
+  - arquivo já salvo no candidato: clicar no “X” deve executar a remoção real
+  - arquivo recém-selecionado, mas ainda não salvo: clicar no “X” deve apenas limpar a seleção local
+- Adicionar estado de carregamento/desabilitado durante a exclusão para evitar cliques duplicados.
 
-### Abordagem
+3. Criar ação de remoção de CV no store
+- Em `src/data/store.tsx`, adicionar uma função como `removeCandidatoCV(candidatoId)`.
+- Essa função deve:
+  - localizar os arquivos na pasta do candidato no bucket (`${candidatoId}/`)
+  - remover o(s) arquivo(s) existente(s) do storage
+  - atualizar a tabela `candidatos`, definindo `cv_url = null` e `cv_filename = null`
+  - recarregar a lista de candidatos
+  - exibir mensagem de sucesso/erro adequada
 
-Duas camadas de proteção:
+4. Conectar a remoção na tela de candidatos
+- Em `src/pages/Candidates.tsx`, passar o callback de remoção para o `FileUpload` dentro do modal de edição.
+- Após remover o CV:
+  - atualizar o `editDialog` local para refletir que o candidato ficou sem CV
+  - manter o modal aberto
+  - permitir selecionar imediatamente um novo arquivo para substituição
 
-1. **Banco de dados** — Criar um índice único na tabela `candidatos` sobre `(telefone_celular, email)` para garantir integridade mesmo fora da aplicação.
+5. Melhorar o fluxo de substituição do CV
+- Ajustar `uploadCandidatoCV` para limpar arquivos antigos da pasta do candidato antes de enviar o novo.
+- Isso evita arquivos órfãos e garante que cada candidato tenha apenas um CV ativo.
 
-2. **Aplicação (store.tsx)** — Antes do `insert`, fazer um `select` verificando se já existe candidato com mesmo telefone + email. Se existir, exibir toast de erro com mensagem amigável e **não** inserir.
+Arquivos envolvidos
+- `src/components/FileUpload.tsx`
+- `src/data/store.tsx`
+- `src/pages/Candidates.tsx`
 
-### Arquivos a alterar
-
-1. **Migration SQL** — Criar índice único: `CREATE UNIQUE INDEX idx_candidatos_tel_email ON candidatos (telefone_celular, email)`
-2. **`src/data/store.tsx`** — Na função `addCandidato`, adicionar query de verificação antes do insert
-
-### Detalhes técnicos
-
-```typescript
-// store.tsx — addCandidato
-const { data: existing } = await supabase
-  .from('candidatos')
-  .select('id')
-  .eq('telefone_celular', data.telefone_celular)
-  .eq('email', data.email)
-  .maybeSingle();
-
-if (existing) {
-  toast.error('Candidato já cadastrado com este telefone e e-mail.');
-  return null;
-}
+Detalhes técnicos
+- Não deve ser necessária migração no banco.
+- A exclusão pode ser feita de forma robusta listando os arquivos em `candidate-cvs/${candidatoId}` e removendo todos dessa pasta, porque o upload atual já usa esse padrão:
+```text
+${candidatoId}/${Date.now()}_${file.name}
+```
+- Depois da remoção, os campos do candidato devem ficar:
+```text
+cv_url = null
+cv_filename = null
 ```
 
-A constraint no banco serve como fallback de segurança caso a validação no front seja bypassada.
-
+Resultado esperado
+- Ao clicar no “X” do CV existente, o arquivo some de verdade do storage e do cadastro do candidato.
+- O usuário consegue escolher outro CV no mesmo modal e salvar normalmente.
+- A interface deixa claro quando o CV foi removido com sucesso e não mostra mais o arquivo antigo.
