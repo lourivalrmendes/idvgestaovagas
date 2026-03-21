@@ -1,49 +1,48 @@
 
-Objetivo: corrigir o fluxo de troca imediata do CV na edição do candidato, para que após excluir o arquivo o usuário possa selecionar outro sem precisar clicar em “Salvar”, e evitar o erro `Invalid key`.
+Objetivo: adicionar, na página de Candidatos, um filtro de Cargo ao lado da pesquisa por nome para listar apenas candidatos relacionados ao cargo selecionado.
 
-Diagnóstico
-- A exclusão do CV já está sendo persistida imediatamente no backend por `removeCandidatoCV`.
-- O botão “Salvar” não é o responsável por “limpar variáveis” do CV removido.
-- O erro mostrado (`Invalid key`) aponta para o nome/caminho do arquivo enviado ao storage, especialmente porque o path atual usa `file.name` bruto:
-```text
-${candidatoId}/${Date.now()}_${file.name}
-```
-- Nomes com acentos, caracteres especiais ou certos símbolos podem gerar chave inválida no storage. Isso explica por que a remoção funciona, mas o novo upload falha.
+Diagnóstico do que existe hoje
+- A tela `src/pages/Candidates.tsx` hoje só filtra por texto (`nome`, `email`, `cidade`).
+- O dropdown de cargos pode vir da tabela `funcoes`, que já existe e já é usada em `CreateJob.tsx`.
+- Porém a tabela `candidatos` não possui campo de cargo/função próprio.
+- No modelo atual, o vínculo entre candidato e cargo existe indiretamente por `envios -> vagas -> vagas.funcao`.
 
-O que vou ajustar
-1. Sanitizar o nome do arquivo antes do upload
-- Em `src/data/store.tsx`, criar uma função para normalizar o nome do CV:
-  - remover acentos
-  - trocar espaços por `_` ou `-`
-  - remover caracteres especiais inválidos
-  - manter a extensão original
-- O upload passará a usar um nome seguro no storage, sem depender do nome bruto do arquivo.
+Plano recomendado
+1. Carregar os cargos ativos
+- Reaproveitar o mesmo padrão já usado em `CreateJob.tsx` para buscar `funcoes` ativas.
+- Exibir o dropdown ao lado do campo de pesquisa.
+- Incluir opção padrão como “Todos os cargos”.
 
-2. Manter o nome original apenas para exibição
-- Salvar no banco:
-  - `cv_url` com o path seguro/publicado
-  - `cv_filename` com o nome original do arquivo para o usuário continuar vendo o nome real no sistema
-- Assim resolvemos o erro técnico sem piorar a experiência visual.
+2. Adicionar estado de filtro na tela
+- Criar um estado local para o cargo selecionado.
+- Manter o filtro de nome atual funcionando junto com o novo filtro de cargo.
 
-3. Garantir troca imediata no modal
-- Revisar `src/pages/Candidates.tsx` e `src/components/FileUpload.tsx` para confirmar que, após `handleRemoveCV`, o componente entra imediatamente em estado “sem arquivo”.
-- O usuário poderá selecionar outro CV no mesmo modal, sem precisar salvar antes.
+3. Filtrar candidatos pelo cargo das vagas relacionadas
+- Usar `store.envios` + `store.vagas` para descobrir quais candidatos já tiveram envio para vagas com `vaga.funcao === cargoSelecionado`.
+- Aplicar esse conjunto junto com a busca textual.
+- Garantir que o mesmo candidato não apareça duplicado.
 
-4. Fortalecer o fluxo de substituição
-- Em `uploadCandidatoCV`, manter a limpeza prévia dos arquivos antigos.
-- Se o upload do novo arquivo falhar, exibir mensagem clara de erro sem deixar o modal em estado inconsistente.
+4. Ajustar a experiência da listagem
+- Se nenhum cargo estiver selecionado, a listagem continua como hoje.
+- Se houver cargo selecionado, mostrar apenas os candidatos compatíveis.
+- Manter a mensagem de “Nenhum candidato encontrado” funcionando também com o novo filtro.
 
-5. Validar mensagens e comportamento esperado
-- Exclusão continua com sucesso imediato.
-- Seleção de novo arquivo após exclusão passa a funcionar no mesmo modal.
-- O novo upload só será efetivado ao salvar a edição, mas sem erro de chave inválida.
+5. Refinar usabilidade
+- Posicionar o dropdown ao lado da busca.
+- Exibir o nome do cargo exatamente como vem da tabela de funções.
+- Deixar o layout responsivo para caber bem na largura atual da página.
+
+Detalhe importante de negócio
+- Pelo modelo atual, esse filtro vai trazer candidatos que já foram associados a vagas daquele cargo.
+- Se a intenção for filtrar por um “cargo do próprio candidato” salvo no cadastro dele, aí será necessária uma segunda etapa com mudança no banco:
+  - adicionar campo de cargo em `candidatos`
+  - incluir esse campo no criar/editar candidato
+  - trocar o filtro para usar esse valor diretamente
 
 Arquivos envolvidos
-- `src/data/store.tsx`
 - `src/pages/Candidates.tsx`
-- `src/components/FileUpload.tsx`
+- possivelmente `src/data/store.tsx` apenas se eu centralizar o carregamento de `funcoes`
 
-Resultado esperado
-- Excluir o CV atual continua funcionando na hora.
-- Logo após excluir, o usuário consegue escolher outro arquivo sem clicar em “Salvar”.
-- O erro `Invalid key` deixa de acontecer, mesmo com nomes de arquivo contendo acentos e caracteres especiais.
+Recomendação
+- Implementar primeiro sem alterar o banco, usando a relação já existente entre candidatos, envios e vagas.
+- Isso entrega o filtro pedido mais rápido e com menor risco.
