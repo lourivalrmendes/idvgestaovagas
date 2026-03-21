@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, List, Kanban, Users, FolderOpen, Settings, UserCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, List, Kanban, Users, FolderOpen, Settings, UserCircle, ChevronLeft, ChevronRight, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/data/store';
 import { useState } from 'react';
@@ -10,6 +10,7 @@ const mainNav = [
   { label: 'Painel de Vagas', to: '/vagas', icon: List },
   { label: 'Fluxo de Vagas', to: '/kanban', icon: Kanban },
   { label: 'Candidatos', to: '/candidatos', icon: Users },
+  { label: 'Assistente de Recrutamento', to: '/assistente-recrutamento', icon: Bot },
   { label: 'Meus Registros', to: '/meus-registros', icon: FolderOpen },
 ];
 

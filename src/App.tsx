@@ -18,6 +18,7 @@ import CandidateDetail from "./pages/CandidateDetail";
 import Administration from "./pages/Administration";
 import MyProfile from "./pages/MyProfile";
 import MyRecords from "./pages/MyRecords";
+import RecruitmentAssistant from "./pages/RecruitmentAssistant";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
                   <Route path="/kanban" element={<JobsKanban />} />
                   <Route path="/candidatos" element={<Candidates />} />
                   <Route path="/candidatos/:id" element={<CandidateDetail />} />
+                  <Route path="/assistente-recrutamento" element={<RecruitmentAssistant />} />
                   <Route path="/meus-registros" element={<MyRecords />} />
                   <Route path="/administracao" element={<Administration />} />
                   <Route path="/perfil" element={<MyProfile />} />
