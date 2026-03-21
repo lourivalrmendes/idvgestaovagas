@@ -1,56 +1,49 @@
 
-Objetivo: fazer o botão “X” do CV, na edição de candidato, realmente excluir o arquivo salvo no backend e liberar a troca por um novo arquivo.
+Objetivo: corrigir o fluxo de troca imediata do CV na edição do candidato, para que após excluir o arquivo o usuário possa selecionar outro sem precisar clicar em “Salvar”, e evitar o erro `Invalid key`.
 
-1. Identificar a causa do problema atual
-- Hoje o componente `FileUpload` apenas limpa o nome exibido localmente.
-- Ele não chama nenhuma ação para apagar o arquivo do bucket `candidate-cvs`.
-- Ele também não limpa os campos `cv_url` e `cv_filename` do candidato na tabela `candidatos`.
-
-2. Ajustar o `FileUpload` para suportar remoção real
-- Evoluir `src/components/FileUpload.tsx` para aceitar um callback de remoção do arquivo atual.
-- Diferenciar dois cenários:
-  - arquivo já salvo no candidato: clicar no “X” deve executar a remoção real
-  - arquivo recém-selecionado, mas ainda não salvo: clicar no “X” deve apenas limpar a seleção local
-- Adicionar estado de carregamento/desabilitado durante a exclusão para evitar cliques duplicados.
-
-3. Criar ação de remoção de CV no store
-- Em `src/data/store.tsx`, adicionar uma função como `removeCandidatoCV(candidatoId)`.
-- Essa função deve:
-  - localizar os arquivos na pasta do candidato no bucket (`${candidatoId}/`)
-  - remover o(s) arquivo(s) existente(s) do storage
-  - atualizar a tabela `candidatos`, definindo `cv_url = null` e `cv_filename = null`
-  - recarregar a lista de candidatos
-  - exibir mensagem de sucesso/erro adequada
-
-4. Conectar a remoção na tela de candidatos
-- Em `src/pages/Candidates.tsx`, passar o callback de remoção para o `FileUpload` dentro do modal de edição.
-- Após remover o CV:
-  - atualizar o `editDialog` local para refletir que o candidato ficou sem CV
-  - manter o modal aberto
-  - permitir selecionar imediatamente um novo arquivo para substituição
-
-5. Melhorar o fluxo de substituição do CV
-- Ajustar `uploadCandidatoCV` para limpar arquivos antigos da pasta do candidato antes de enviar o novo.
-- Isso evita arquivos órfãos e garante que cada candidato tenha apenas um CV ativo.
-
-Arquivos envolvidos
-- `src/components/FileUpload.tsx`
-- `src/data/store.tsx`
-- `src/pages/Candidates.tsx`
-
-Detalhes técnicos
-- Não deve ser necessária migração no banco.
-- A exclusão pode ser feita de forma robusta listando os arquivos em `candidate-cvs/${candidatoId}` e removendo todos dessa pasta, porque o upload atual já usa esse padrão:
+Diagnóstico
+- A exclusão do CV já está sendo persistida imediatamente no backend por `removeCandidatoCV`.
+- O botão “Salvar” não é o responsável por “limpar variáveis” do CV removido.
+- O erro mostrado (`Invalid key`) aponta para o nome/caminho do arquivo enviado ao storage, especialmente porque o path atual usa `file.name` bruto:
 ```text
 ${candidatoId}/${Date.now()}_${file.name}
 ```
-- Depois da remoção, os campos do candidato devem ficar:
-```text
-cv_url = null
-cv_filename = null
-```
+- Nomes com acentos, caracteres especiais ou certos símbolos podem gerar chave inválida no storage. Isso explica por que a remoção funciona, mas o novo upload falha.
+
+O que vou ajustar
+1. Sanitizar o nome do arquivo antes do upload
+- Em `src/data/store.tsx`, criar uma função para normalizar o nome do CV:
+  - remover acentos
+  - trocar espaços por `_` ou `-`
+  - remover caracteres especiais inválidos
+  - manter a extensão original
+- O upload passará a usar um nome seguro no storage, sem depender do nome bruto do arquivo.
+
+2. Manter o nome original apenas para exibição
+- Salvar no banco:
+  - `cv_url` com o path seguro/publicado
+  - `cv_filename` com o nome original do arquivo para o usuário continuar vendo o nome real no sistema
+- Assim resolvemos o erro técnico sem piorar a experiência visual.
+
+3. Garantir troca imediata no modal
+- Revisar `src/pages/Candidates.tsx` e `src/components/FileUpload.tsx` para confirmar que, após `handleRemoveCV`, o componente entra imediatamente em estado “sem arquivo”.
+- O usuário poderá selecionar outro CV no mesmo modal, sem precisar salvar antes.
+
+4. Fortalecer o fluxo de substituição
+- Em `uploadCandidatoCV`, manter a limpeza prévia dos arquivos antigos.
+- Se o upload do novo arquivo falhar, exibir mensagem clara de erro sem deixar o modal em estado inconsistente.
+
+5. Validar mensagens e comportamento esperado
+- Exclusão continua com sucesso imediato.
+- Seleção de novo arquivo após exclusão passa a funcionar no mesmo modal.
+- O novo upload só será efetivado ao salvar a edição, mas sem erro de chave inválida.
+
+Arquivos envolvidos
+- `src/data/store.tsx`
+- `src/pages/Candidates.tsx`
+- `src/components/FileUpload.tsx`
 
 Resultado esperado
-- Ao clicar no “X” do CV existente, o arquivo some de verdade do storage e do cadastro do candidato.
-- O usuário consegue escolher outro CV no mesmo modal e salvar normalmente.
-- A interface deixa claro quando o CV foi removido com sucesso e não mostra mais o arquivo antigo.
+- Excluir o CV atual continua funcionando na hora.
+- Logo após excluir, o usuário consegue escolher outro arquivo sem clicar em “Salvar”.
+- O erro `Invalid key` deixa de acontecer, mesmo com nomes de arquivo contendo acentos e caracteres especiais.
