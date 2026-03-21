@@ -7,6 +7,7 @@ const breadcrumbMap: Record<string, string> = {
   '/vagas/nova': 'Nova Vaga',
   '/kanban': 'Fluxo de Vagas',
   '/candidatos': 'Candidatos',
+  '/assistente-recrutamento': 'Assistente de Recrutamento',
   '/meus-registros': 'Meus Registros',
   '/administracao': 'Administração',
   '/perfil': 'Meu Perfil',
