@@ -1,48 +1,37 @@
 
-Objetivo: adicionar, na página de Candidatos, um filtro de Cargo ao lado da pesquisa por nome para listar apenas candidatos relacionados ao cargo selecionado.
+Objetivo: criar um novo item no menu lateral chamado “Assistente de Recrutamento” que abra, no canvas central do sistema, uma página dedicada com o site `https://recrutamento-hml.idvlabs.com.br/` incorporado.
 
-Diagnóstico do que existe hoje
-- A tela `src/pages/Candidates.tsx` hoje só filtra por texto (`nome`, `email`, `cidade`).
-- O dropdown de cargos pode vir da tabela `funcoes`, que já existe e já é usada em `CreateJob.tsx`.
-- Porém a tabela `candidatos` não possui campo de cargo/função próprio.
-- No modelo atual, o vínculo entre candidato e cargo existe indiretamente por `envios -> vagas -> vagas.funcao`.
+O que vou implementar
+1. Novo item no menu lateral
+- Adicionar “Assistente de Recrutamento” na navegação principal do `AppSidebar`.
+- Usar um ícone compatível com o restante do menu.
+- Garantir destaque visual quando a rota estiver ativa.
 
-Plano recomendado
-1. Carregar os cargos ativos
-- Reaproveitar o mesmo padrão já usado em `CreateJob.tsx` para buscar `funcoes` ativas.
-- Exibir o dropdown ao lado do campo de pesquisa.
-- Incluir opção padrão como “Todos os cargos”.
+2. Nova rota da aplicação
+- Criar uma rota própria, por exemplo `/assistente-recrutamento`.
+- Registrar essa rota em `src/App.tsx`.
+- Incluir o título/breadcrumb correspondente no `Layout`.
 
-2. Adicionar estado de filtro na tela
-- Criar um estado local para o cargo selecionado.
-- Manter o filtro de nome atual funcionando junto com o novo filtro de cargo.
+3. Nova página para o assistente
+- Criar uma página dedicada para renderizar o conteúdo externo dentro da área central do sistema.
+- Usar um `iframe` ocupando toda a área útil da página, com altura responsiva e visual integrado ao layout atual.
+- Incluir um estado inicial simples de carregamento para evitar tela “vazia” enquanto o conteúdo abre.
 
-3. Filtrar candidatos pelo cargo das vagas relacionadas
-- Usar `store.envios` + `store.vagas` para descobrir quais candidatos já tiveram envio para vagas com `vaga.funcao === cargoSelecionado`.
-- Aplicar esse conjunto junto com a busca textual.
-- Garantir que o mesmo candidato não apareça duplicado.
+4. Comportamento esperado
+- Ao clicar no item do menu, o usuário permanece dentro do sistema.
+- O chatbot será exibido dentro do canvas central, sem abrir nova aba.
+- A sidebar e o cabeçalho continuam visíveis, como nas demais telas.
 
-4. Ajustar a experiência da listagem
-- Se nenhum cargo estiver selecionado, a listagem continua como hoje.
-- Se houver cargo selecionado, mostrar apenas os candidatos compatíveis.
-- Manter a mensagem de “Nenhum candidato encontrado” funcionando também com o novo filtro.
+Pontos técnicos importantes
+- Arquivos que devem ser ajustados:
+  - `src/components/AppSidebar.tsx`
+  - `src/App.tsx`
+  - `src/components/Layout.tsx`
+  - novo arquivo de página, por exemplo `src/pages/RecruitmentAssistant.tsx`
+- A implementação será apenas de embed, conforme sua decisão.
+- Existe um risco externo: se esse site enviar políticas de segurança do navegador que bloqueiem incorporação (`iframe`), a página não poderá ser exibida dentro do sistema. Mesmo assim, a estrutura da tela e do menu ficará pronta corretamente do nosso lado.
 
-5. Refinar usabilidade
-- Posicionar o dropdown ao lado da busca.
-- Exibir o nome do cargo exatamente como vem da tabela de funções.
-- Deixar o layout responsivo para caber bem na largura atual da página.
-
-Detalhe importante de negócio
-- Pelo modelo atual, esse filtro vai trazer candidatos que já foram associados a vagas daquele cargo.
-- Se a intenção for filtrar por um “cargo do próprio candidato” salvo no cadastro dele, aí será necessária uma segunda etapa com mudança no banco:
-  - adicionar campo de cargo em `candidatos`
-  - incluir esse campo no criar/editar candidato
-  - trocar o filtro para usar esse valor diretamente
-
-Arquivos envolvidos
-- `src/pages/Candidates.tsx`
-- possivelmente `src/data/store.tsx` apenas se eu centralizar o carregamento de `funcoes`
-
-Recomendação
-- Implementar primeiro sem alterar o banco, usando a relação já existente entre candidatos, envios e vagas.
-- Isso entrega o filtro pedido mais rápido e com menor risco.
+Resultado esperado
+- Novo menu “Assistente de Recrutamento” disponível na lateral.
+- Ao acessar, o sistema mostra a página do chatbot incorporada no centro da aplicação.
+- Navegação consistente com o restante do produto.
