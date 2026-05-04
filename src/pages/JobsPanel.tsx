@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Eye, Pencil, Trash2, Search, Loader2 } from 'lucide-react';
+import { Plus, Eye, Pencil, Trash2, Search, Loader2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { VagaStatus } from '@/types';
+import * as XLSX from 'xlsx';
 
 export default function JobsPanel() {
   const { vagas, deleteVaga, getUserById, getEnviosByVaga, loadingVagas } = useAppStore();
