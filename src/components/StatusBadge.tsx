@@ -15,6 +15,8 @@ const statusStyles: Record<VagaStatus, string> = {
 
 const candidatoStatusStyles: Record<CandidatoStatusVaga, string> = {
   EM_ENTREVISTA: 'bg-status-validacao/15 text-status-validacao border-status-validacao/30',
+  EM_ENTREVISTA_TECNICA: 'bg-status-com-cvs/15 text-status-com-cvs border-status-com-cvs/30',
+  EM_ENTREVISTA_CLIENTE: 'bg-status-fechamento/15 text-status-fechamento border-status-fechamento/30',
   APROVADO: 'bg-status-aprovada/15 text-status-aprovada border-status-aprovada/30',
   REPROVADO: 'bg-status-reprovada/15 text-status-reprovada border-status-reprovada/30',
 };

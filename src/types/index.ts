@@ -21,7 +21,12 @@ export type VagaStatus =
   | 'VAGA_APROVADA'
   | 'VAGA_REPROVADA';
 
-export type CandidatoStatusVaga = 'EM_ENTREVISTA' | 'APROVADO' | 'REPROVADO';
+export type CandidatoStatusVaga =
+  | 'EM_ENTREVISTA'
+  | 'EM_ENTREVISTA_TECNICA'
+  | 'EM_ENTREVISTA_CLIENTE'
+  | 'APROVADO'
+  | 'REPROVADO';
 
 export interface HistoricoStatus {
   status: VagaStatus;
@@ -108,7 +113,9 @@ export const STATUS_LABELS: Record<VagaStatus, string> = {
 };
 
 export const CANDIDATO_STATUS_LABELS: Record<CandidatoStatusVaga, string> = {
-  EM_ENTREVISTA: 'Em Entrevista',
+  EM_ENTREVISTA: 'Em Entrevista RH',
+  EM_ENTREVISTA_TECNICA: 'Em Entrevista Técnica',
+  EM_ENTREVISTA_CLIENTE: 'Em Entrevista Cliente',
   APROVADO: 'Aprovado',
   REPROVADO: 'Reprovado',
 };
