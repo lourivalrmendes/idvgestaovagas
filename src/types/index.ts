@@ -21,7 +21,12 @@ export type VagaStatus =
   | 'VAGA_APROVADA'
   | 'VAGA_REPROVADA';
 
-export type CandidatoStatusVaga = 'EM_ENTREVISTA' | 'APROVADO' | 'REPROVADO';
+export type CandidatoStatusVaga =
+  | 'EM_ENTREVISTA'
+  | 'EM_ENTREVISTA_TECNICA'
+  | 'EM_ENTREVISTA_CLIENTE'
+  | 'APROVADO'
+  | 'REPROVADO';
 
 export interface HistoricoStatus {
   status: VagaStatus;
