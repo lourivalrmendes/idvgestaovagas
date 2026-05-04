@@ -43,6 +43,84 @@ export default function JobsPanel() {
     toast.success('Vaga deletada com sucesso');
   };
 
+  const handleExportExcel = () => {
+    if (filtered.length === 0) {
+      toast.error('Não há vagas para exportar');
+      return;
+    }
+    const rows = filtered.map(v => {
+      const dias = diasDesdeValidacao(v);
+      const recrutador = v.recrutador_user_id ? getUserById(v.recrutador_user_id) : null;
+      const envios = getEnviosByVaga(v.dbId);
+      return {
+        ID: v.id,
+        Cliente: v.nome_cliente,
+        'Função': v.funcao,
+        Unidade: v.unidade_negocio,
+        Categoria: v.categoria,
+        Recrutador: recrutador?.nome || '—',
+        Status: v.status,
+        'Data de Criação': v.data_criacao,
+        'SLA (dias)': dias !== null ? dias : '—',
+        'Qtd. CVs': envios.length,
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const headers = Object.keys(rows[0]);
+
+    // Column widths based on content
+    ws['!cols'] = headers.map(h => {
+      const maxLen = Math.max(
+        h.length,
+        ...rows.map(r => String((r as any)[h] ?? '').length)
+      );
+      return { wch: Math.min(Math.max(maxLen + 2, 10), 40) };
+    });
+
+    // Style header row
+    const range = XLSX.utils.decode_range(ws['!ref'] as string);
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const addr = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (!ws[addr]) continue;
+      ws[addr].s = {
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '1F2937' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+          top: { style: 'thin', color: { rgb: '000000' } },
+          bottom: { style: 'thin', color: { rgb: '000000' } },
+          left: { style: 'thin', color: { rgb: '000000' } },
+          right: { style: 'thin', color: { rgb: '000000' } },
+        },
+      };
+    }
+    // Style body rows (zebra)
+    for (let R = 1; R <= range.e.r; R++) {
+      const zebra = R % 2 === 0 ? 'F3F4F6' : 'FFFFFF';
+      for (let C = range.s.c; C <= range.e.c; C++) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!ws[addr]) continue;
+        ws[addr].s = {
+          fill: { fgColor: { rgb: zebra } },
+          alignment: { vertical: 'center' },
+          border: {
+            top: { style: 'thin', color: { rgb: 'D1D5DB' } },
+            bottom: { style: 'thin', color: { rgb: 'D1D5DB' } },
+            left: { style: 'thin', color: { rgb: 'D1D5DB' } },
+            right: { style: 'thin', color: { rgb: 'D1D5DB' } },
+          },
+        };
+      }
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Painel de Vagas');
+    const date = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `painel-vagas-${date}.xlsx`);
+    toast.success('Planilha exportada com sucesso');
+  };
+
   if (loadingVagas) {
     return <div className="page-container flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
