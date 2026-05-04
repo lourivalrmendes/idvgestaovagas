@@ -328,7 +328,9 @@ export default function JobDetail() {
                               <SelectValue placeholder="Status" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="EM_ENTREVISTA">Em Entrevista</SelectItem>
+                              <SelectItem value="EM_ENTREVISTA">Em Entrevista RH</SelectItem>
+                              <SelectItem value="EM_ENTREVISTA_TECNICA">Em Entrevista Técnica</SelectItem>
+                              <SelectItem value="EM_ENTREVISTA_CLIENTE">Em Entrevista Cliente</SelectItem>
                               <SelectItem value="APROVADO">Aprovado</SelectItem>
                               <SelectItem value="REPROVADO">Reprovado</SelectItem>
                             </SelectContent>
