@@ -141,7 +141,12 @@ export default function JobsPanel() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Buscar por ID, cliente ou função..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 w-[300px] bg-card" />
         </div>
-        <Button onClick={() => navigate('/vagas/nova')}><Plus className="h-4 w-4 mr-2" />Nova Vaga</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExportExcel} disabled={filtered.length === 0}>
+            <Download className="h-4 w-4 mr-2" />Exportar Excel
+          </Button>
+          <Button onClick={() => navigate('/vagas/nova')}><Plus className="h-4 w-4 mr-2" />Nova Vaga</Button>
+        </div>
       </div>
 
       <GlobalFilters filters={filters} onChange={setFilters} />
