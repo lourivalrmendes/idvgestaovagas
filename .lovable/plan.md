@@ -1,37 +1,30 @@
-
-Objetivo: criar um novo item no menu lateral chamado “Assistente de Recrutamento” que abra, no canvas central do sistema, uma página dedicada com o site `https://recrutamento-hml.idvlabs.com.br/` incorporado.
+Objetivo: adicionar no Painel de Vagas um botão "Exportar Excel" que gera uma planilha .xlsx formatada com os dados atualmente exibidos na tabela, respeitando a busca e os filtros aplicados.
 
 O que vou implementar
-1. Novo item no menu lateral
-- Adicionar “Assistente de Recrutamento” na navegação principal do `AppSidebar`.
-- Usar um ícone compatível com o restante do menu.
-- Garantir destaque visual quando a rota estiver ativa.
+1. Botão "Exportar Excel"
+- Adicionar ao lado do botão "Nova Vaga", no topo do Painel de Vagas.
+- Ícone de download e estilo visual coerente com os demais botões.
+- Desabilitado quando não houver linhas a exportar.
 
-2. Nova rota da aplicação
-- Criar uma rota própria, por exemplo `/assistente-recrutamento`.
-- Registrar essa rota em `src/App.tsx`.
-- Incluir o título/breadcrumb correspondente no `Layout`.
+2. Exportação respeitando filtros
+- A planilha conterá exatamente as linhas em `filtered` (ou seja, com a busca por ID/cliente/função e os filtros globais já aplicados).
+- Colunas exportadas (mesmas da tabela):
+  - ID, Cliente, Função, Unidade, Categoria, Recrutador, Status, Data de Criação, SLA (dias), Quantidade de CVs.
 
-3. Nova página para o assistente
-- Criar uma página dedicada para renderizar o conteúdo externo dentro da área central do sistema.
-- Usar um `iframe` ocupando toda a área útil da página, com altura responsiva e visual integrado ao layout atual.
-- Incluir um estado inicial simples de carregamento para evitar tela “vazia” enquanto o conteúdo abre.
+3. Formatação do arquivo
+- Cabeçalho em negrito, fundo destacado e texto centralizado.
+- Largura de colunas ajustada ao conteúdo.
+- Linhas com bordas finas e zebrado leve para leitura.
+- Nome do arquivo no padrão `painel-vagas-AAAA-MM-DD.xlsx`.
 
-4. Comportamento esperado
-- Ao clicar no item do menu, o usuário permanece dentro do sistema.
-- O chatbot será exibido dentro do canvas central, sem abrir nova aba.
-- A sidebar e o cabeçalho continuam visíveis, como nas demais telas.
+4. Biblioteca
+- Usar `xlsx` (SheetJS) para gerar o arquivo no navegador, sem necessidade de backend.
+- Será adicionada como dependência se ainda não estiver instalada.
 
-Pontos técnicos importantes
-- Arquivos que devem ser ajustados:
-  - `src/components/AppSidebar.tsx`
-  - `src/App.tsx`
-  - `src/components/Layout.tsx`
-  - novo arquivo de página, por exemplo `src/pages/RecruitmentAssistant.tsx`
-- A implementação será apenas de embed, conforme sua decisão.
-- Existe um risco externo: se esse site enviar políticas de segurança do navegador que bloqueiem incorporação (`iframe`), a página não poderá ser exibida dentro do sistema. Mesmo assim, a estrutura da tela e do menu ficará pronta corretamente do nosso lado.
+Pontos técnicos
+- Arquivo afetado: `src/pages/JobsPanel.tsx`.
+- A função de exportação será uma função local, recebendo `filtered`, `getUserById` e `getEnviosByVaga` para montar as linhas exatamente como aparecem na tela.
+- Sem mudanças em banco, regras de negócio ou outras telas.
 
 Resultado esperado
-- Novo menu “Assistente de Recrutamento” disponível na lateral.
-- Ao acessar, o sistema mostra a página do chatbot incorporada no centro da aplicação.
-- Navegação consistente com o restante do produto.
+- No Painel de Vagas, o usuário aplica filtros/busca, clica em "Exportar Excel" e baixa uma planilha formatada contendo apenas as vagas visíveis na tela.
