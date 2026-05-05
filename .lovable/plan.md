@@ -1,33 +1,33 @@
-## Objetivo
-Expandir os status do candidato dentro de uma vaga, na tela de Detalhes da Vaga, para incluir três tipos de entrevista além de Aprovado/Reprovado.
+## Problema
 
-## Novos status
-- Em Entrevista RH (renomeação do atual "Em Entrevista", mantém o código `EM_ENTREVISTA` no banco para preservar os registros existentes)
-- Em Entrevista Técnica (novo, código `EM_ENTREVISTA_TECNICA`)
-- Em Entrevista Cliente (novo, código `EM_ENTREVISTA_CLIENTE`)
-- Aprovado (mantido)
-- Reprovado (mantido)
+Na aba **Histórico** do Detalhe da Vaga, quando o usuário muda o status e digita uma observação, o texto não aparece depois na lista. A renderização já contempla `h.observacao`, mas o valor não está sendo persistido corretamente no banco.
 
-## O que vou alterar
+## Causa
 
-1. `src/types/index.ts`
-   - Atualizar o tipo `CandidatoStatusVaga` para incluir os dois novos códigos.
-   - Atualizar `CANDIDATO_STATUS_LABELS`: rótulo de `EM_ENTREVISTA` passa a ser "Em Entrevista RH" e adicionar os rótulos dos novos status.
+Em `src/data/store.tsx` (`changeVagaStatus`), a observação é gravada com:
 
-2. `src/components/StatusBadge.tsx`
-   - Adicionar estilos para os novos status (mesma família visual do "Em Entrevista" atual, para manter consistência), garantindo que o badge renderize corretamente.
+```ts
+supabase.from('vaga_status_historico')
+  .update({ observacao })
+  .eq('vaga_id', dbId)
+  .eq('status_novo', newStatus)
+  .order(...).limit(1)
+```
 
-3. `src/pages/JobDetail.tsx`
-   - No `Select` de status do candidato (aba Candidatos), incluir os três itens de entrevista além de Aprovado/Reprovado, na ordem:
-     1. Em Entrevista RH
-     2. Em Entrevista Técnica
-     3. Em Entrevista Cliente
-     4. Aprovado
-     5. Reprovado
+O PostgREST ignora `order/limit` em `update`, então: (a) se já houver registros antigos com o mesmo `status_novo`, todos seriam afetados; (b) em alguns casos a linha-alvo (recém-criada pelo trigger) não é localizada de forma confiável. Resultado: a observação se perde.
 
-## O que NÃO vou alterar
-- Banco de dados: a coluna `envios.status_candidato_na_vaga` já é `text` sem constraint, então os novos valores são aceitos sem migração. Registros antigos `EM_ENTREVISTA` continuam válidos e passam a aparecer como "Em Entrevista RH".
-- Regras de negócio, RLS, fluxo de Kanban da vaga e demais telas permanecem inalterados.
+## Correção
+
+Trocar a abordagem por uma busca explícita da última linha do histórico daquela vaga e atualizar pelo `id`:
+
+1. Após o `update` da `vagas`, fazer `select id` em `vaga_status_historico` filtrando por `vaga_id` e `status_novo`, ordenando por `criado_em desc` e pegando 1.
+2. Atualizar `observacao` apenas naquele `id`.
+
+Arquivo: `src/data/store.tsx`, função `changeVagaStatus`.
+
+A tela `JobDetail.tsx` (aba Histórico) já exibe `h.observacao` em itálico abaixo do usuário/data — nenhuma mudança visual necessária.
 
 ## Resultado esperado
-Na aba Candidatos da tela de Detalhes da Vaga, o seletor de status do candidato passa a oferecer 5 opções: Em Entrevista RH, Em Entrevista Técnica, Em Entrevista Cliente, Aprovado e Reprovado, com badges coloridos correspondentes.
+
+- Ao trocar o status da vaga e preencher a Observação, o texto passa a aparecer na linha correspondente do Histórico, logo abaixo do nome do usuário e da data.
+- Sem alterações de schema, RLS ou de outras telas.

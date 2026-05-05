@@ -357,9 +357,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     const { error } = await supabase.from('vagas').update(updates).eq('id', dbId);
     if (error) { toast.error('Erro: ' + error.message); return; }
-    // If there's a custom observation, insert it manually into historico since trigger doesn't capture it
+    // If there's a custom observation, update the latest historico row created by the trigger
     if (observacao) {
-      await supabase.from('vaga_status_historico').update({ observacao }).eq('vaga_id', dbId).eq('status_novo', newStatus).order('criado_em', { ascending: false }).limit(1);
+      const { data: latest } = await supabase
+        .from('vaga_status_historico')
+        .select('id')
+        .eq('vaga_id', dbId)
+        .eq('status_novo', newStatus)
+        .order('criado_em', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latest?.id) {
+        await supabase.from('vaga_status_historico').update({ observacao }).eq('id', latest.id);
+      }
     }
     await refreshVagas();
   }, [refreshVagas]);
