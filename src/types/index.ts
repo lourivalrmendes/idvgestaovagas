@@ -17,16 +17,21 @@ export type VagaStatus =
   | 'SEM_CVS_FORA_SLA'
   | 'COM_CVS_ENVIADOS'
   | 'COM_CVS_MAIS_15_DIAS_SEM_RETORNO'
+  | 'ENTREVISTA_RS'
+  | 'ENVIADO_COMERCIAL_CLIENTE'
+  | 'ENTREVISTA_TECNICA'
+  | 'ENTREVISTA_CLIENTE'
   | 'EM_FECHAMENTO'
   | 'VAGA_APROVADA'
   | 'VAGA_REPROVADA';
 
 export type CandidatoStatusVaga =
   | 'EM_ENTREVISTA'
+  | 'ENVIADO_COMERCIAL_CLIENTE'
   | 'EM_ENTREVISTA_TECNICA'
   | 'EM_ENTREVISTA_CLIENTE'
-  | 'APROVADO'
-  | 'REPROVADO';
+  | 'REPROVADO'
+  | 'APROVADO';
 
 export interface HistoricoStatus {
   status: VagaStatus;
@@ -107,17 +112,22 @@ export const STATUS_LABELS: Record<VagaStatus, string> = {
   SEM_CVS_FORA_SLA: 'Sem CVs – Fora SLA',
   COM_CVS_ENVIADOS: 'Com CVs Enviados',
   COM_CVS_MAIS_15_DIAS_SEM_RETORNO: 'CVs +15 dias s/ Retorno',
+  ENTREVISTA_RS: 'Entrevista com R&S',
+  ENVIADO_COMERCIAL_CLIENTE: 'Enviado ao Comercial/Cliente',
+  ENTREVISTA_TECNICA: 'Entrevista Técnica',
+  ENTREVISTA_CLIENTE: 'Entrevista com Cliente',
   EM_FECHAMENTO: 'Em Fechamento',
   VAGA_APROVADA: 'Vaga Aprovada',
   VAGA_REPROVADA: 'Vaga Reprovada',
 };
 
 export const CANDIDATO_STATUS_LABELS: Record<CandidatoStatusVaga, string> = {
-  EM_ENTREVISTA: 'Em Entrevista RH',
-  EM_ENTREVISTA_TECNICA: 'Em Entrevista Técnica',
-  EM_ENTREVISTA_CLIENTE: 'Em Entrevista Cliente',
-  APROVADO: 'Aprovado',
+  EM_ENTREVISTA: 'Entrevista com R&S',
+  ENVIADO_COMERCIAL_CLIENTE: 'Enviado ao Comercial/Cliente',
+  EM_ENTREVISTA_TECNICA: 'Entrevista Técnica',
+  EM_ENTREVISTA_CLIENTE: 'Entrevista com Cliente',
   REPROVADO: 'Reprovado',
+  APROVADO: 'Aprovado',
 };
 
 export const PIPELINE_ORDER: VagaStatus[] = [
@@ -126,6 +136,10 @@ export const PIPELINE_ORDER: VagaStatus[] = [
   'SEM_CVS_FORA_SLA',
   'COM_CVS_ENVIADOS',
   'COM_CVS_MAIS_15_DIAS_SEM_RETORNO',
+  'ENTREVISTA_RS',
+  'ENVIADO_COMERCIAL_CLIENTE',
+  'ENTREVISTA_TECNICA',
+  'ENTREVISTA_CLIENTE',
   'EM_FECHAMENTO',
   'VAGA_APROVADA',
   'VAGA_REPROVADA',
