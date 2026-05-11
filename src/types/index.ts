@@ -17,16 +17,21 @@ export type VagaStatus =
   | 'SEM_CVS_FORA_SLA'
   | 'COM_CVS_ENVIADOS'
   | 'COM_CVS_MAIS_15_DIAS_SEM_RETORNO'
+  | 'ENTREVISTA_RS'
+  | 'ENVIADO_COMERCIAL_CLIENTE'
+  | 'ENTREVISTA_TECNICA'
+  | 'ENTREVISTA_CLIENTE'
   | 'EM_FECHAMENTO'
   | 'VAGA_APROVADA'
   | 'VAGA_REPROVADA';
 
 export type CandidatoStatusVaga =
   | 'EM_ENTREVISTA'
+  | 'ENVIADO_COMERCIAL_CLIENTE'
   | 'EM_ENTREVISTA_TECNICA'
   | 'EM_ENTREVISTA_CLIENTE'
-  | 'APROVADO'
-  | 'REPROVADO';
+  | 'REPROVADO'
+  | 'APROVADO';
 
 export interface HistoricoStatus {
   status: VagaStatus;
