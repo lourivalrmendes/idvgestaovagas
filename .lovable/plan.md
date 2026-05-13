@@ -1,31 +1,44 @@
-## Ajustar Status do Candidato na Vaga
+## Manutenção de Status de Vaga — Botão "Atualizar Status"
 
-### Objetivo
-Atualizar a lista de status disponíveis para candidatos associados a uma vaga (aba Candidatos no Detalhe da Vaga), refletindo as novas etapas do processo seletivo.
+### Contexto
+O botão **Atualizar Status** na tela de Detalhes da Vaga lista os status disponíveis para a vaga. Hoje existem 12 status, sendo que 4 deles devem ser removidos e 1 novo deve ser adicionado.
 
-### Mudanças no tipo `CandidatoStatusVaga`
-- **Adicionar:** `DECLINOU`
-- **Manter:** `EM_ENTREVISTA`, `ENVIADO_COMERCIAL_CLIENTE`, `EM_ENTREVISTA_TECNICA`, `EM_ENTREVISTA_CLIENTE`, `REPROVADO`, `APROVADO`
+### Alterações no tipo `VagaStatus` (`src/types/index.ts`)
+- **Remover** os seguintes status:
+  - `ENTREVISTA_RS`
+  - `ENVIADO_COMERCIAL_CLIENTE`
+  - `ENTREVISTA_TECNICA`
+  - `ENTREVISTA_CLIENTE`
+- **Adicionar** o novo status:
+  - `CANCELADA_CONGELADA` com label "Cancelada / Congelada"
+- **Atualizar** `STATUS_LABELS` — remover entradas dos 4 status excluídos, adicionar entrada para `CANCELADA_CONGELADA`.
+- **Atualizar** `PIPELINE_ORDER` — remover os 4 status excluídos, posicionar `CANCELADA_CONGELADA` ao final do pipeline (após `VAGA_REPROVADA`).
 
-### Mudanças nos rótulos (`CANDIDATO_STATUS_LABELS`)
-- `EM_ENTREVISTA` → "Entrevista com R&S"
-- `EM_ENTREVISTA_TECNICA` → "Entrevista técnica"
-- `ENVIADO_COMERCIAL_CLIENTE` → "CV Enviado ao comercial/cliente" *(renomeado)*
-- `EM_ENTREVISTA_CLIENTE` → "Entrevista com cliente"
-- `REPROVADO` → "Reprovado"
-- `APROVADO` → "Aprovado"
-- `DECLINOU` → "Declinou" *(novo)*
+### Status finais da vaga (9 status)
+1. Em Validação RH
+2. Sem CVs – Dentro SLA
+3. Sem CVs – Fora SLA
+4. Com CVs Enviados
+5. CVs +15 dias s/ Retorno
+6. Em Fechamento
+7. Vaga Aprovada
+8. Vaga Reprovada
+9. Cancelada / Congelada *(novo)*
 
-### Mudanças nos componentes
-1. **`src/types/index.ts`**
-   - Adicionar `DECLINOU` ao tipo `CandidatoStatusVaga`.
-   - Atualizar `CANDIDATO_STATUS_LABELS` com os rótulos acima.
+### Alterações em `src/components/StatusBadge.tsx`
+- Remover as 4 entradas de `statusStyles` dos status excluídos.
+- Adicionar entrada `CANCELADA_CONGELADA` com estilo visual apropriado (sugestão: cinza/neutro).
 
-2. **`src/components/StatusBadge.tsx`**
-   - Adicionar estilo para `DECLINOU` no `candidatoStatusStyles`.
+### Impacto em outras telas
+- **Fluxo de Vagas (Kanban)** — as colunas são geradas a partir de `PIPELINE_ORDER`, então refletem automaticamente os 9 status.
+- **Detalhes da Vaga → Atualizar Status** — o `<Select>` itera sobre `PIPELINE_ORDER`, então o dropdown reflete automaticamente os 9 status.
+- **Dashboard** — a lista `openStatuses` define quais status são considerados "abertos". O novo status `CANCELADA_CONGELADA` será tratado como "encerrado" (não aberto), assim como `VAGA_APROVADA` e `VAGA_REPROVADA`.
 
-3. **`src/pages/JobDetail.tsx`**
-   - Atualizar o `<Select>` de status do candidato (linhas ~330-336) para listar todas as opções, usando os valores e rótulos atualizados.
+### Segurança de dados
+- Verificação no banco: **nenhuma vaga** atualmente utiliza os 4 status que serão removidos. Não há necessidade de migração de dados.
+- O campo `status` da tabela `vagas` é do tipo `text` (sem enum ou check constraint), portanto não requer alteração de schema.
 
-### Nota técnica
-Não são necessárias mudanças no banco de dados. A coluna `envios.status_candidato_na_vaga` é do tipo `text`, então novos valores são aceitos automaticamente.
+### Arquivos alterados
+- `src/types/index.ts`
+- `src/components/StatusBadge.tsx`
+- `src/pages/Dashboard.tsx` (ajuste em `openStatuses` se necessário)
