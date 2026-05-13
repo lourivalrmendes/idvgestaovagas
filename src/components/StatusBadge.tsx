@@ -8,13 +8,10 @@ const statusStyles: Record<VagaStatus, string> = {
   SEM_CVS_FORA_SLA: 'bg-status-fora-sla/15 text-status-fora-sla border-status-fora-sla/30',
   COM_CVS_ENVIADOS: 'bg-status-com-cvs/15 text-status-com-cvs border-status-com-cvs/30',
   COM_CVS_MAIS_15_DIAS_SEM_RETORNO: 'bg-status-sem-retorno/15 text-status-sem-retorno border-status-sem-retorno/30',
-  ENTREVISTA_RS: 'bg-status-validacao/15 text-status-validacao border-status-validacao/30',
-  ENVIADO_COMERCIAL_CLIENTE: 'bg-status-com-cvs/15 text-status-com-cvs border-status-com-cvs/30',
-  ENTREVISTA_TECNICA: 'bg-status-sem-retorno/15 text-status-sem-retorno border-status-sem-retorno/30',
-  ENTREVISTA_CLIENTE: 'bg-status-fechamento/15 text-status-fechamento border-status-fechamento/30',
   EM_FECHAMENTO: 'bg-status-fechamento/15 text-status-fechamento border-status-fechamento/30',
   VAGA_APROVADA: 'bg-status-aprovada/15 text-status-aprovada border-status-aprovada/30',
   VAGA_REPROVADA: 'bg-status-reprovada/15 text-status-reprovada border-status-reprovada/30',
+  CANCELADA_CONGELADA: 'bg-muted text-muted-foreground border-border',
 };
 
 const candidatoStatusStyles: Record<CandidatoStatusVaga, string> = {

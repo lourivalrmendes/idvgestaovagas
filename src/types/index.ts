@@ -17,13 +17,10 @@ export type VagaStatus =
   | 'SEM_CVS_FORA_SLA'
   | 'COM_CVS_ENVIADOS'
   | 'COM_CVS_MAIS_15_DIAS_SEM_RETORNO'
-  | 'ENTREVISTA_RS'
-  | 'ENVIADO_COMERCIAL_CLIENTE'
-  | 'ENTREVISTA_TECNICA'
-  | 'ENTREVISTA_CLIENTE'
   | 'EM_FECHAMENTO'
   | 'VAGA_APROVADA'
-  | 'VAGA_REPROVADA';
+  | 'VAGA_REPROVADA'
+  | 'CANCELADA_CONGELADA';
 
 export type CandidatoStatusVaga =
   | 'EM_ENTREVISTA'
@@ -113,13 +110,10 @@ export const STATUS_LABELS: Record<VagaStatus, string> = {
   SEM_CVS_FORA_SLA: 'Sem CVs – Fora SLA',
   COM_CVS_ENVIADOS: 'Com CVs Enviados',
   COM_CVS_MAIS_15_DIAS_SEM_RETORNO: 'CVs +15 dias s/ Retorno',
-  ENTREVISTA_RS: 'Entrevista com R&S',
-  ENVIADO_COMERCIAL_CLIENTE: 'Enviado ao Comercial/Cliente',
-  ENTREVISTA_TECNICA: 'Entrevista Técnica',
-  ENTREVISTA_CLIENTE: 'Entrevista com Cliente',
   EM_FECHAMENTO: 'Em Fechamento',
   VAGA_APROVADA: 'Vaga Aprovada',
   VAGA_REPROVADA: 'Vaga Reprovada',
+  CANCELADA_CONGELADA: 'Cancelada / Congelada',
 };
 
 export const CANDIDATO_STATUS_LABELS: Record<CandidatoStatusVaga, string> = {
@@ -138,11 +132,8 @@ export const PIPELINE_ORDER: VagaStatus[] = [
   'SEM_CVS_FORA_SLA',
   'COM_CVS_ENVIADOS',
   'COM_CVS_MAIS_15_DIAS_SEM_RETORNO',
-  'ENTREVISTA_RS',
-  'ENVIADO_COMERCIAL_CLIENTE',
-  'ENTREVISTA_TECNICA',
-  'ENTREVISTA_CLIENTE',
   'EM_FECHAMENTO',
   'VAGA_APROVADA',
   'VAGA_REPROVADA',
+  'CANCELADA_CONGELADA',
 ];
