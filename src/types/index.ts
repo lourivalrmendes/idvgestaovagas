@@ -31,7 +31,8 @@ export type CandidatoStatusVaga =
   | 'EM_ENTREVISTA_TECNICA'
   | 'EM_ENTREVISTA_CLIENTE'
   | 'REPROVADO'
-  | 'APROVADO';
+  | 'APROVADO'
+  | 'DECLINOU';
 
 export interface HistoricoStatus {
   status: VagaStatus;
@@ -123,11 +124,12 @@ export const STATUS_LABELS: Record<VagaStatus, string> = {
 
 export const CANDIDATO_STATUS_LABELS: Record<CandidatoStatusVaga, string> = {
   EM_ENTREVISTA: 'Entrevista com R&S',
-  ENVIADO_COMERCIAL_CLIENTE: 'Enviado ao Comercial/Cliente',
-  EM_ENTREVISTA_TECNICA: 'Entrevista Técnica',
-  EM_ENTREVISTA_CLIENTE: 'Entrevista com Cliente',
+  EM_ENTREVISTA_TECNICA: 'Entrevista técnica',
+  ENVIADO_COMERCIAL_CLIENTE: 'CV Enviado ao comercial/cliente',
+  EM_ENTREVISTA_CLIENTE: 'Entrevista com cliente',
   REPROVADO: 'Reprovado',
   APROVADO: 'Aprovado',
+  DECLINOU: 'Declinou',
 };
 
 export const PIPELINE_ORDER: VagaStatus[] = [

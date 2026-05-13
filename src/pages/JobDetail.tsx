@@ -328,11 +328,13 @@ export default function JobDetail() {
                               <SelectValue placeholder="Status" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="EM_ENTREVISTA">Em Entrevista RH</SelectItem>
-                              <SelectItem value="EM_ENTREVISTA_TECNICA">Em Entrevista Técnica</SelectItem>
-                              <SelectItem value="EM_ENTREVISTA_CLIENTE">Em Entrevista Cliente</SelectItem>
-                              <SelectItem value="APROVADO">Aprovado</SelectItem>
+                              <SelectItem value="EM_ENTREVISTA">Entrevista com R&S</SelectItem>
+                              <SelectItem value="EM_ENTREVISTA_TECNICA">Entrevista técnica</SelectItem>
+                              <SelectItem value="ENVIADO_COMERCIAL_CLIENTE">CV Enviado ao comercial/cliente</SelectItem>
+                              <SelectItem value="EM_ENTREVISTA_CLIENTE">Entrevista com cliente</SelectItem>
                               <SelectItem value="REPROVADO">Reprovado</SelectItem>
+                              <SelectItem value="APROVADO">Aprovado</SelectItem>
+                              <SelectItem value="DECLINOU">Declinou</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
