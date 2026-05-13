@@ -24,6 +24,7 @@ const candidatoStatusStyles: Record<CandidatoStatusVaga, string> = {
   EM_ENTREVISTA_CLIENTE: 'bg-status-fechamento/15 text-status-fechamento border-status-fechamento/30',
   APROVADO: 'bg-status-aprovada/15 text-status-aprovada border-status-aprovada/30',
   REPROVADO: 'bg-status-reprovada/15 text-status-reprovada border-status-reprovada/30',
+  DECLINOU: 'bg-status-fora-sla/15 text-status-fora-sla border-status-fora-sla/30',
 };
 
 export function VagaStatusBadge({ status, className }: { status: VagaStatus; className?: string }) {
