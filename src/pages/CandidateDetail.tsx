@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAppStore } from '@/data/store';
+import { useAppStore, openCandidatoCV } from '@/data/store';
 import { CandidatoStatusBadge, VagaStatusBadge } from '@/components/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,7 +36,7 @@ export default function CandidateDetail() {
                 <Button 
                   variant="secondary" 
                   size="sm"
-                  onClick={() => candidato.cv_url && window.open(candidato.cv_url, '_blank')}
+                  onClick={() => candidato.cv_url && openCandidatoCV(candidato.cv_url)}
                 >
                   <Download className="h-4 w-4 mr-2" />
                   {candidato.cv_filename}
