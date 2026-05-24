@@ -50,9 +50,9 @@ export default function Dashboard() {
       const diff = (Date.now() - new Date(v.data_validacao_rh).getTime()) / 86400000;
       return diff > 15;
     });
-    const encerradas = filtered.filter(v => v.status === 'VAGA_APROVADA' || v.status === 'VAGA_REPROVADA');
+    const encerradas = filtered.filter(v => v.status === 'VAGA_APROVADA' || v.status === 'VAGA_REPROVADA' || v.status === 'VAGA_PERDIDA');
     const ganhas = filtered.filter(v => v.status === 'VAGA_APROVADA');
-    const perdidas = filtered.filter(v => v.status === 'VAGA_REPROVADA');
+    const perdidas = filtered.filter(v => v.status === 'VAGA_REPROVADA' || v.status === 'VAGA_PERDIDA');
     return [
       { label: 'Total Vagas', value: total, icon: Briefcase, color: 'text-primary', delta: '' },
       { label: 'Abertas ≤ 5 dias', value: ate5.length, icon: Clock, color: 'text-status-dentro-sla', delta: '' },
