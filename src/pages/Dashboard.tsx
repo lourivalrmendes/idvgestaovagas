@@ -87,7 +87,7 @@ export default function Dashboard() {
   const insights = useMemo(() => {
     const byUnidade = unidadeNomes.map(u => ({
       name: u,
-      perdas: filtered.filter(v => v.unidade_negocio === u && v.status === 'VAGA_REPROVADA').length,
+      perdas: filtered.filter(v => v.unidade_negocio === u && (v.status === 'VAGA_REPROVADA' || v.status === 'VAGA_PERDIDA')).length,
       total: filtered.filter(v => v.unidade_negocio === u).length,
     })).sort((a, b) => b.perdas - a.perdas);
 
