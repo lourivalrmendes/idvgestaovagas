@@ -1,44 +1,29 @@
-## Manutenção de Status de Vaga — Botão "Atualizar Status"
+## Objetivo
+Incluir o status **"Vaga Perdida"** ao final do pipeline de vagas, após "Cancelada / Congelada", refletindo na página de Fluxo de Vagas (Kanban) e em todas as telas que consomem os status.
 
-### Contexto
-O botão **Atualizar Status** na tela de Detalhes da Vaga lista os status disponíveis para a vaga. Hoje existem 12 status, sendo que 4 deles devem ser removidos e 1 novo deve ser adicionado.
+## Alterações
 
-### Alterações no tipo `VagaStatus` (`src/types/index.ts`)
-- **Remover** os seguintes status:
-  - `ENTREVISTA_RS`
-  - `ENVIADO_COMERCIAL_CLIENTE`
-  - `ENTREVISTA_TECNICA`
-  - `ENTREVISTA_CLIENTE`
-- **Adicionar** o novo status:
-  - `CANCELADA_CONGELADA` com label "Cancelada / Congelada"
-- **Atualizar** `STATUS_LABELS` — remover entradas dos 4 status excluídos, adicionar entrada para `CANCELADA_CONGELADA`.
-- **Atualizar** `PIPELINE_ORDER` — remover os 4 status excluídos, posicionar `CANCELADA_CONGELADA` ao final do pipeline (após `VAGA_REPROVADA`).
+### 1. Tipos e constantes (`src/types/index.ts`)
+- Adicionar `VAGA_PERDIDA` ao union type `VagaStatus`
+- Adicionar label `VAGA_PERDIDA: 'Vaga Perdida'` em `STATUS_LABELS`
+- Incluir `'VAGA_PERDIDA'` ao final de `PIPELINE_ORDER`
 
-### Status finais da vaga (9 status)
-1. Em Validação RH
-2. Sem CVs – Dentro SLA
-3. Sem CVs – Fora SLA
-4. Com CVs Enviados
-5. CVs +15 dias s/ Retorno
-6. Em Fechamento
-7. Vaga Aprovada
-8. Vaga Reprovada
-9. Cancelada / Congelada *(novo)*
+### 2. Badge de status (`src/components/StatusBadge.tsx`)
+- Adicionar estilo visual para `VAGA_PERDIDA` (tom que indique perda/encerramento negativo, similar a `VAGA_REPROVADA`)
 
-### Alterações em `src/components/StatusBadge.tsx`
-- Remover as 4 entradas de `statusStyles` dos status excluídos.
-- Adicionar entrada `CANCELADA_CONGELADA` com estilo visual apropriado (sugestão: cinza/neutro).
+### 3. Dashboard (`src/pages/Dashboard.tsx`)
+- Atualizar KPI "Vagas Perdidas" para contar tanto `VAGA_REPROVADA` quanto `VAGA_PERDIDA`
+- Atualizar KPI "Encerradas" para incluir `VAGA_PERDIDA`
+- Atualizar gráfico de barras (perdidas por categoria) para incluir `VAGA_PERDIDA`
+- Atualizar insights de perdas para incluir `VAGA_PERDIDA`
 
-### Impacto em outras telas
-- **Fluxo de Vagas (Kanban)** — as colunas são geradas a partir de `PIPELINE_ORDER`, então refletem automaticamente os 9 status.
-- **Detalhes da Vaga → Atualizar Status** — o `<Select>` itera sobre `PIPELINE_ORDER`, então o dropdown reflete automaticamente os 9 status.
-- **Dashboard** — a lista `openStatuses` define quais status são considerados "abertos". O novo status `CANCELADA_CONGELADA` será tratado como "encerrado" (não aberto), assim como `VAGA_APROVADA` e `VAGA_REPROVADA`.
+### 4. Fluxo de Vagas / Kanban (`src/pages/JobsKanban.tsx`)
+- Como a página itera sobre `PIPELINE_ORDER`, a nova coluna aparecerá automaticamente
+- Verificar se o diálogo de confirmação ao mover para `VAGA_PERDIDA` precisa de tratamento especial (será tratado como status normal, sem diálogo de aprovação/reprovação)
 
-### Segurança de dados
-- Verificação no banco: **nenhuma vaga** atualmente utiliza os 4 status que serão removidos. Não há necessidade de migração de dados.
-- O campo `status` da tabela `vagas` é do tipo `text` (sem enum ou check constraint), portanto não requer alteração de schema.
+### 5. Detalhe da Vaga (`src/pages/JobDetail.tsx`)
+- O seletor de status já itera sobre `PIPELINE_ORDER`, portanto a nova opção aparece automaticamente
+- Nenhuma lógica especial necessária para `VAGA_PERDIDA` (não exige data de início nem motivo)
 
-### Arquivos alterados
-- `src/types/index.ts`
-- `src/components/StatusBadge.tsx`
-- `src/pages/Dashboard.tsx` (ajuste em `openStatuses` se necessário)
+## Resultado final
+A coluna "Vaga Perdida" será exibida no Kanban como a última coluna do pipeline, permitindo mover vagas para esse status e contabilizá-las corretamente nos indicadores do Dashboard.

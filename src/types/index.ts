@@ -20,7 +20,8 @@ export type VagaStatus =
   | 'EM_FECHAMENTO'
   | 'VAGA_APROVADA'
   | 'VAGA_REPROVADA'
-  | 'CANCELADA_CONGELADA';
+  | 'CANCELADA_CONGELADA'
+  | 'VAGA_PERDIDA';
 
 export type CandidatoStatusVaga =
   | 'EM_ENTREVISTA'
