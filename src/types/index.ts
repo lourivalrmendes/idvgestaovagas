@@ -138,4 +138,5 @@ export const PIPELINE_ORDER: VagaStatus[] = [
   'VAGA_APROVADA',
   'VAGA_REPROVADA',
   'CANCELADA_CONGELADA',
+  'VAGA_PERDIDA',
 ];
