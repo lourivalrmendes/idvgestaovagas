@@ -453,9 +453,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('candidate-cvs')
-        .getPublicUrl(filePath);
+      // Bucket is private; store the storage path. Signed URLs are generated on demand.
+      const publicUrl = filePath;
 
       const { error: updateError } = await supabase
         .from('candidatos')
