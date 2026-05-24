@@ -115,6 +115,7 @@ export const STATUS_LABELS: Record<VagaStatus, string> = {
   VAGA_APROVADA: 'Vaga Aprovada',
   VAGA_REPROVADA: 'Vaga Reprovada',
   CANCELADA_CONGELADA: 'Cancelada / Congelada',
+  VAGA_PERDIDA: 'Vaga Perdida',
 };
 
 export const CANDIDATO_STATUS_LABELS: Record<CandidatoStatusVaga, string> = {
