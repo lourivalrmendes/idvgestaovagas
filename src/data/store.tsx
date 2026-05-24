@@ -190,6 +190,29 @@ interface AppState {
 
 const AppContext = createContext<AppState | null>(null);
 
+/**
+ * Opens a candidate CV. Accepts either a storage path (new format)
+ * or a legacy public URL (old format) and resolves a short-lived signed URL.
+ */
+export async function openCandidatoCV(cvUrlOrPath: string) {
+  if (!cvUrlOrPath) return;
+  let path = cvUrlOrPath;
+  // Legacy: extract path from a full Supabase public URL
+  const marker = '/candidate-cvs/';
+  const idx = cvUrlOrPath.indexOf(marker);
+  if (idx !== -1) {
+    path = cvUrlOrPath.substring(idx + marker.length);
+  }
+  const { data, error } = await supabase.storage
+    .from('candidate-cvs')
+    .createSignedUrl(path, 60 * 5);
+  if (error || !data?.signedUrl) {
+    toast.error('Não foi possível abrir o CV: ' + (error?.message || 'erro desconhecido'));
+    return;
+  }
+  window.open(data.signedUrl, '_blank');
+}
+
 export const useAppStore = () => {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error('useAppStore must be within AppProvider');
@@ -453,9 +476,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('candidate-cvs')
-        .getPublicUrl(filePath);
+      // Bucket is private; store the storage path. Signed URLs are generated on demand.
+      const publicUrl = filePath;
 
       const { error: updateError } = await supabase
         .from('candidatos')

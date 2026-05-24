@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Eye, Pencil, Trash2, Loader2, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import { DbCandidato } from '@/data/store';
+import { DbCandidato, openCandidatoCV } from '@/data/store';
 import { FileUpload } from '@/components/FileUpload';
 
 interface FuncaoOption {
@@ -215,7 +215,7 @@ export default function Candidates() {
                       size="sm" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (c.cv_url) window.open(c.cv_url, '_blank');
+                        if (c.cv_url) openCandidatoCV(c.cv_url);
                       }}
                     >
                       <Download className="h-4 w-4 mr-1" />
