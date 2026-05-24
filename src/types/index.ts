@@ -20,7 +20,8 @@ export type VagaStatus =
   | 'EM_FECHAMENTO'
   | 'VAGA_APROVADA'
   | 'VAGA_REPROVADA'
-  | 'CANCELADA_CONGELADA';
+  | 'CANCELADA_CONGELADA'
+  | 'VAGA_PERDIDA';
 
 export type CandidatoStatusVaga =
   | 'EM_ENTREVISTA'
@@ -114,6 +115,7 @@ export const STATUS_LABELS: Record<VagaStatus, string> = {
   VAGA_APROVADA: 'Vaga Aprovada',
   VAGA_REPROVADA: 'Vaga Reprovada',
   CANCELADA_CONGELADA: 'Cancelada / Congelada',
+  VAGA_PERDIDA: 'Vaga Perdida',
 };
 
 export const CANDIDATO_STATUS_LABELS: Record<CandidatoStatusVaga, string> = {
@@ -136,4 +138,5 @@ export const PIPELINE_ORDER: VagaStatus[] = [
   'VAGA_APROVADA',
   'VAGA_REPROVADA',
   'CANCELADA_CONGELADA',
+  'VAGA_PERDIDA',
 ];

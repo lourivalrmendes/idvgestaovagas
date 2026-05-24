@@ -50,9 +50,9 @@ export default function Dashboard() {
       const diff = (Date.now() - new Date(v.data_validacao_rh).getTime()) / 86400000;
       return diff > 15;
     });
-    const encerradas = filtered.filter(v => v.status === 'VAGA_APROVADA' || v.status === 'VAGA_REPROVADA');
+    const encerradas = filtered.filter(v => v.status === 'VAGA_APROVADA' || v.status === 'VAGA_REPROVADA' || v.status === 'VAGA_PERDIDA');
     const ganhas = filtered.filter(v => v.status === 'VAGA_APROVADA');
-    const perdidas = filtered.filter(v => v.status === 'VAGA_REPROVADA');
+    const perdidas = filtered.filter(v => v.status === 'VAGA_REPROVADA' || v.status === 'VAGA_PERDIDA');
     return [
       { label: 'Total Vagas', value: total, icon: Briefcase, color: 'text-primary', delta: '' },
       { label: 'Abertas ≤ 5 dias', value: ate5.length, icon: Clock, color: 'text-status-dentro-sla', delta: '' },
@@ -80,14 +80,14 @@ export default function Dashboard() {
       name: c,
       abertas: filtered.filter(v => v.categoria === c && openStatuses.includes(v.status)).length,
       ganhas: filtered.filter(v => v.categoria === c && v.status === 'VAGA_APROVADA').length,
-      perdidas: filtered.filter(v => v.categoria === c && v.status === 'VAGA_REPROVADA').length,
+      perdidas: filtered.filter(v => v.categoria === c && (v.status === 'VAGA_REPROVADA' || v.status === 'VAGA_PERDIDA')).length,
     }));
   }, [filtered, categoriaNomes]);
 
   const insights = useMemo(() => {
     const byUnidade = unidadeNomes.map(u => ({
       name: u,
-      perdas: filtered.filter(v => v.unidade_negocio === u && v.status === 'VAGA_REPROVADA').length,
+      perdas: filtered.filter(v => v.unidade_negocio === u && (v.status === 'VAGA_REPROVADA' || v.status === 'VAGA_PERDIDA')).length,
       total: filtered.filter(v => v.unidade_negocio === u).length,
     })).sort((a, b) => b.perdas - a.perdas);
 

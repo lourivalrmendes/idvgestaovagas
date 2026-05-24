@@ -12,6 +12,7 @@ const statusStyles: Record<VagaStatus, string> = {
   VAGA_APROVADA: 'bg-status-aprovada/15 text-status-aprovada border-status-aprovada/30',
   VAGA_REPROVADA: 'bg-status-reprovada/15 text-status-reprovada border-status-reprovada/30',
   CANCELADA_CONGELADA: 'bg-muted text-muted-foreground border-border',
+  VAGA_PERDIDA: 'bg-status-reprovada/15 text-status-reprovada border-status-reprovada/30',
 };
 
 const candidatoStatusStyles: Record<CandidatoStatusVaga, string> = {
