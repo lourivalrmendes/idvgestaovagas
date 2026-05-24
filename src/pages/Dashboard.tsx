@@ -80,7 +80,7 @@ export default function Dashboard() {
       name: c,
       abertas: filtered.filter(v => v.categoria === c && openStatuses.includes(v.status)).length,
       ganhas: filtered.filter(v => v.categoria === c && v.status === 'VAGA_APROVADA').length,
-      perdidas: filtered.filter(v => v.categoria === c && v.status === 'VAGA_REPROVADA').length,
+      perdidas: filtered.filter(v => v.categoria === c && (v.status === 'VAGA_REPROVADA' || v.status === 'VAGA_PERDIDA')).length,
     }));
   }, [filtered, categoriaNomes]);
 
