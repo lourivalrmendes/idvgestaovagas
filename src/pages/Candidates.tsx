@@ -192,7 +192,30 @@ export default function Candidates() {
       <div><Label>Estado</Label><Input value={form.estado} onChange={e => setForm(p => ({ ...p, estado: e.target.value }))} maxLength={2} /></div>
       <div><Label>Telefone Celular</Label><Input value={form.telefone_celular} onChange={e => setForm(p => ({ ...p, telefone_celular: e.target.value }))} /></div>
       <div><Label>Telefone Outro</Label><Input value={form.telefone_outro} onChange={e => setForm(p => ({ ...p, telefone_outro: e.target.value }))} /></div>
-      <div><Label>LinkedIn</Label><Input value={form.linkedin} onChange={e => setForm(p => ({ ...p, linkedin: e.target.value }))} /></div>
+      <div>
+        <Label>LinkedIn</Label>
+        <div className="flex gap-2">
+          <Input value={form.linkedin} onChange={e => setForm(p => ({ ...p, linkedin: e.target.value }))} />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={openAssociate}
+                    disabled={!editDialog}
+                  >
+                    <Link2 className="h-4 w-4 mr-1" />
+                    Associar a Vaga
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!editDialog && <TooltipContent>Salve o candidato primeiro</TooltipContent>}
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
       <div className="md:col-span-2">
         <Label>CV do Candidato</Label>
         <FileUpload 
