@@ -9,10 +9,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Eye, Pencil, Trash2, Loader2, Download } from 'lucide-react';
+import { Plus, Search, Eye, Pencil, Trash2, Loader2, Download, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DbCandidato, openCandidatoCV } from '@/data/store';
 import { FileUpload } from '@/components/FileUpload';
+import { VagaStatusBadge } from '@/components/StatusBadge';
+import { VagaStatus } from '@/types';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface FuncaoOption {
   id: string;
