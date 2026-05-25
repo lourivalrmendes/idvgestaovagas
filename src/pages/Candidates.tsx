@@ -33,6 +33,49 @@ export default function Candidates() {
   const [editDialog, setEditDialog] = useState<DbCandidato | null>(null);
   const [form, setForm] = useState({ nome: '', cidade: '', estado: '', telefone_celular: '', telefone_outro: '', email: '', linkedin: '' });
   const [cvFile, setCvFile] = useState<File | null>(null);
+  const [associateOpen, setAssociateOpen] = useState(false);
+  const [assocClienteId, setAssocClienteId] = useState<string>('');
+  const [assocVagaDbId, setAssocVagaDbId] = useState<string>('');
+  const [assocSubmitting, setAssocSubmitting] = useState(false);
+
+  const FINAL_STATUSES: VagaStatus[] = ['VAGA_APROVADA', 'VAGA_REPROVADA', 'CANCELADA_CONGELADA', 'VAGA_PERDIDA'];
+  const selectedCliente = store.clientes.find(c => c.id === assocClienteId);
+  const vagasDoCliente = useMemo(() => {
+    if (!selectedCliente) return [];
+    return store.vagas.filter(v =>
+      v.nome_cliente === selectedCliente.nome &&
+      !FINAL_STATUSES.includes(v.status as VagaStatus)
+    );
+  }, [selectedCliente, store.vagas]);
+
+  const openAssociate = () => {
+    setAssocClienteId('');
+    setAssocVagaDbId('');
+    setAssociateOpen(true);
+  };
+
+  const handleAssociate = async () => {
+    if (!editDialog || !assocVagaDbId) return;
+    const dup = store.envios.find(e => e.vaga_id === assocVagaDbId && e.candidato_id === editDialog.id);
+    if (dup) { toast.error('Candidato já associado a esta vaga'); return; }
+    setAssocSubmitting(true);
+    try {
+      await store.addEnvio({
+        vaga_id: assocVagaDbId,
+        candidato_id: editDialog.id,
+        data_envio: new Date().toISOString().slice(0, 10),
+        status_candidato_na_vaga: 'EM_ENTREVISTA',
+        observacoes: '',
+        created_by_user_id: store.currentUser!.id,
+      });
+      toast.success('Candidato associado à vaga');
+      setAssociateOpen(false);
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao associar candidato');
+    } finally {
+      setAssocSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     supabase
