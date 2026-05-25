@@ -9,10 +9,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Eye, Pencil, Trash2, Loader2, Download } from 'lucide-react';
+import { Plus, Search, Eye, Pencil, Trash2, Loader2, Download, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DbCandidato, openCandidatoCV } from '@/data/store';
 import { FileUpload } from '@/components/FileUpload';
+import { VagaStatusBadge } from '@/components/StatusBadge';
+import { VagaStatus } from '@/types';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface FuncaoOption {
   id: string;
@@ -30,6 +33,49 @@ export default function Candidates() {
   const [editDialog, setEditDialog] = useState<DbCandidato | null>(null);
   const [form, setForm] = useState({ nome: '', cidade: '', estado: '', telefone_celular: '', telefone_outro: '', email: '', linkedin: '' });
   const [cvFile, setCvFile] = useState<File | null>(null);
+  const [associateOpen, setAssociateOpen] = useState(false);
+  const [assocClienteId, setAssocClienteId] = useState<string>('');
+  const [assocVagaDbId, setAssocVagaDbId] = useState<string>('');
+  const [assocSubmitting, setAssocSubmitting] = useState(false);
+
+  const FINAL_STATUSES: VagaStatus[] = ['VAGA_APROVADA', 'VAGA_REPROVADA', 'CANCELADA_CONGELADA', 'VAGA_PERDIDA'];
+  const selectedCliente = store.clientes.find(c => c.id === assocClienteId);
+  const vagasDoCliente = useMemo(() => {
+    if (!selectedCliente) return [];
+    return store.vagas.filter(v =>
+      v.nome_cliente === selectedCliente.nome &&
+      !FINAL_STATUSES.includes(v.status as VagaStatus)
+    );
+  }, [selectedCliente, store.vagas]);
+
+  const openAssociate = () => {
+    setAssocClienteId('');
+    setAssocVagaDbId('');
+    setAssociateOpen(true);
+  };
+
+  const handleAssociate = async () => {
+    if (!editDialog || !assocVagaDbId) return;
+    const dup = store.envios.find(e => e.vaga_id === assocVagaDbId && e.candidato_id === editDialog.id);
+    if (dup) { toast.error('Candidato já associado a esta vaga'); return; }
+    setAssocSubmitting(true);
+    try {
+      await store.addEnvio({
+        vaga_id: assocVagaDbId,
+        candidato_id: editDialog.id,
+        data_envio: new Date().toISOString().slice(0, 10),
+        status_candidato_na_vaga: 'EM_ENTREVISTA',
+        observacoes: '',
+        created_by_user_id: store.currentUser!.id,
+      });
+      toast.success('Candidato associado à vaga');
+      setAssociateOpen(false);
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao associar candidato');
+    } finally {
+      setAssocSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     supabase
@@ -146,7 +192,30 @@ export default function Candidates() {
       <div><Label>Estado</Label><Input value={form.estado} onChange={e => setForm(p => ({ ...p, estado: e.target.value }))} maxLength={2} /></div>
       <div><Label>Telefone Celular</Label><Input value={form.telefone_celular} onChange={e => setForm(p => ({ ...p, telefone_celular: e.target.value }))} /></div>
       <div><Label>Telefone Outro</Label><Input value={form.telefone_outro} onChange={e => setForm(p => ({ ...p, telefone_outro: e.target.value }))} /></div>
-      <div><Label>LinkedIn</Label><Input value={form.linkedin} onChange={e => setForm(p => ({ ...p, linkedin: e.target.value }))} /></div>
+      <div>
+        <Label>LinkedIn</Label>
+        <div className="flex gap-2">
+          <Input value={form.linkedin} onChange={e => setForm(p => ({ ...p, linkedin: e.target.value }))} />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={openAssociate}
+                    disabled={!editDialog}
+                  >
+                    <Link2 className="h-4 w-4 mr-1" />
+                    Associar a Vaga
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!editDialog && <TooltipContent>Salve o candidato primeiro</TooltipContent>}
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
       <div className="md:col-span-2">
         <Label>CV do Candidato</Label>
         <FileUpload 
@@ -265,6 +334,62 @@ export default function Candidates() {
           <DialogHeader><DialogTitle>Editar Candidato</DialogTitle></DialogHeader>
           {formFields}
           <DialogFooter><Button variant="outline" onClick={() => setEditDialog(null)}>Cancelar</Button><Button onClick={handleEdit}>Salvar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={associateOpen} onOpenChange={setAssociateOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Associar Candidato a Vaga</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Cliente</Label>
+              <Select value={assocClienteId} onValueChange={(v) => { setAssocClienteId(v); setAssocVagaDbId(''); }}>
+                <SelectTrigger><SelectValue placeholder="Selecione um cliente" /></SelectTrigger>
+                <SelectContent>
+                  {store.clientes.filter(c => c.ativo).map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {assocClienteId && (
+              <div>
+                <Label>Vaga</Label>
+                {vagasDoCliente.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">Nenhuma vaga ativa para este cliente.</p>
+                ) : (
+                  <Select value={assocVagaDbId} onValueChange={setAssocVagaDbId}>
+                    <SelectTrigger><SelectValue placeholder="Selecione uma vaga" /></SelectTrigger>
+                    <SelectContent>
+                      {vagasDoCliente.map(v => (
+                        <SelectItem key={v.dbId} value={v.dbId}>
+                          {v.id} - {v.funcao}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {assocVagaDbId && (() => {
+                  const v = vagasDoCliente.find(x => x.dbId === assocVagaDbId);
+                  return v ? (
+                    <div className="mt-2 flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">Status:</span>
+                      <VagaStatusBadge status={v.status as VagaStatus} />
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssociateOpen(false)}>Cancelar</Button>
+            <Button onClick={handleAssociate} disabled={!assocVagaDbId || assocSubmitting}>
+              {assocSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Link2 className="h-4 w-4 mr-2" />}
+              Associar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

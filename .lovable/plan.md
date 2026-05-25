@@ -1,29 +1,40 @@
 ## Objetivo
-Incluir o status **"Vaga Perdida"** ao final do pipeline de vagas, após "Cancelada / Congelada", refletindo na página de Fluxo de Vagas (Kanban) e em todas as telas que consomem os status.
+Adicionar botão **"Associar a Vaga"** ao lado do campo LinkedIn no diálogo **Editar Candidato**, permitindo vincular o candidato a uma vaga ativa de um cliente específico.
 
-## Alterações
+## Comportamento
 
-### 1. Tipos e constantes (`src/types/index.ts`)
-- Adicionar `VAGA_PERDIDA` ao union type `VagaStatus`
-- Adicionar label `VAGA_PERDIDA: 'Vaga Perdida'` em `STATUS_LABELS`
-- Incluir `'VAGA_PERDIDA'` ao final de `PIPELINE_ORDER`
+- **Novo Candidato**: botão fica desabilitado (com tooltip "Salve o candidato primeiro"). Só fica ativo no diálogo **Editar Candidato**.
+- **Editar Candidato**: ao clicar abre um modal "Associar Candidato a Vaga".
 
-### 2. Badge de status (`src/components/StatusBadge.tsx`)
-- Adicionar estilo visual para `VAGA_PERDIDA` (tom que indique perda/encerramento negativo, similar a `VAGA_REPROVADA`)
+## Fluxo do modal de associação
 
-### 3. Dashboard (`src/pages/Dashboard.tsx`)
-- Atualizar KPI "Vagas Perdidas" para contar tanto `VAGA_REPROVADA` quanto `VAGA_PERDIDA`
-- Atualizar KPI "Encerradas" para incluir `VAGA_PERDIDA`
-- Atualizar gráfico de barras (perdidas por categoria) para incluir `VAGA_PERDIDA`
-- Atualizar insights de perdas para incluir `VAGA_PERDIDA`
+1. **Passo 1 — Selecionar Cliente**: dropdown listando todos os clientes ativos (`clientes` ordenados por nome).
+2. **Passo 2 — Selecionar Vaga**: após escolher o cliente, listar as vagas daquele cliente cujo status **NÃO** esteja em:
+   - `VAGA_APROVADA`
+   - `VAGA_REPROVADA`
+   - `CANCELADA_CONGELADA`
+   - `VAGA_PERDIDA`
+   - Mostrar `código - função` (ex: `VAG-0012 - Desenvolvedor React`) com badge de status.
+3. **Confirmar**: cria um registro em `envios` com:
+   - `vaga_id` = vaga selecionada
+   - `candidato_id` = candidato editado
+   - `data_envio` = hoje
+   - `status_candidato_na_vaga` = `EM_ENTREVISTA` (Entrevista com R&S)
+   - `created_by_user_id` = usuário logado
+4. **Validação**: se já existir envio do mesmo candidato para a mesma vaga, mostrar erro "Candidato já associado a esta vaga".
 
-### 4. Fluxo de Vagas / Kanban (`src/pages/JobsKanban.tsx`)
-- Como a página itera sobre `PIPELINE_ORDER`, a nova coluna aparecerá automaticamente
-- Verificar se o diálogo de confirmação ao mover para `VAGA_PERDIDA` precisa de tratamento especial (será tratado como status normal, sem diálogo de aprovação/reprovação)
+## Resultado
 
-### 5. Detalhe da Vaga (`src/pages/JobDetail.tsx`)
-- O seletor de status já itera sobre `PIPELINE_ORDER`, portanto a nova opção aparece automaticamente
-- Nenhuma lógica especial necessária para `VAGA_PERDIDA` (não exige data de início nem motivo)
+- O envio aparece automaticamente em:
+  - **Histórico de Vagas** na página do Candidato (`CandidateDetail.tsx` — já lê `getEnviosByCandidato`).
+  - **Aba Candidatos** na página da Vaga (`JobDetail.tsx` — já lê `getEnviosByVaga`).
+- Toast de sucesso e fecha o modal de associação (mantém o diálogo de edição aberto).
 
-## Resultado final
-A coluna "Vaga Perdida" será exibida no Kanban como a última coluna do pipeline, permitindo mover vagas para esse status e contabilizá-las corretamente nos indicadores do Dashboard.
+## Detalhes técnicos
+
+- **Arquivos a modificar**:
+  - `src/pages/Candidates.tsx` — adicionar botão ao lado do input LinkedIn (mesma linha, layout flex) e novo `Dialog` "Associar a Vaga" controlado por estado local.
+  - Nenhuma alteração de schema/DB necessária: já existem `clientes`, `vagas`, `envios` e RLS para INSERT em `envios` por Admin/Coord/Recrutador.
+- **Filtros das vagas**: usar `store.vagas` filtrando por `cliente_id` (ou `nome_cliente`) e excluindo os 4 status finais.
+- **Permissões**: RLS de `envios` exige que recrutador esteja atribuído à vaga. Admin/Coord podem associar a qualquer vaga. Mostrar erro amigável se o INSERT for negado.
+- **UI**: layout do campo LinkedIn passa a ser `flex gap-2` com Input + Button "Associar a Vaga" (ícone `Link2`).
