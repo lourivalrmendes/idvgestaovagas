@@ -336,6 +336,62 @@ export default function Candidates() {
           <DialogFooter><Button variant="outline" onClick={() => setEditDialog(null)}>Cancelar</Button><Button onClick={handleEdit}>Salvar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={associateOpen} onOpenChange={setAssociateOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Associar Candidato a Vaga</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Cliente</Label>
+              <Select value={assocClienteId} onValueChange={(v) => { setAssocClienteId(v); setAssocVagaDbId(''); }}>
+                <SelectTrigger><SelectValue placeholder="Selecione um cliente" /></SelectTrigger>
+                <SelectContent>
+                  {store.clientes.filter(c => c.ativo).map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {assocClienteId && (
+              <div>
+                <Label>Vaga</Label>
+                {vagasDoCliente.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">Nenhuma vaga ativa para este cliente.</p>
+                ) : (
+                  <Select value={assocVagaDbId} onValueChange={setAssocVagaDbId}>
+                    <SelectTrigger><SelectValue placeholder="Selecione uma vaga" /></SelectTrigger>
+                    <SelectContent>
+                      {vagasDoCliente.map(v => (
+                        <SelectItem key={v.dbId} value={v.dbId}>
+                          {v.id} - {v.funcao}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {assocVagaDbId && (() => {
+                  const v = vagasDoCliente.find(x => x.dbId === assocVagaDbId);
+                  return v ? (
+                    <div className="mt-2 flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">Status:</span>
+                      <VagaStatusBadge status={v.status as VagaStatus} />
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssociateOpen(false)}>Cancelar</Button>
+            <Button onClick={handleAssociate} disabled={!assocVagaDbId || assocSubmitting}>
+              {assocSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Link2 className="h-4 w-4 mr-2" />}
+              Associar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
